@@ -118,6 +118,13 @@
         </select>
       </div>
       <div>
+        <label for="deps">Dependents (affects BAH)</label>
+        <select id="deps">
+          <option value="yes">Has dependents</option>
+          <option value="no">No dependents</option>
+        </select>
+      </div>
+      <div>
         <label for="tsp">TSP contribution (% of basic pay)</label>
         <input type="number" id="tsp" value="5" min="0" max="100" step="1">
       </div>
@@ -176,9 +183,13 @@
           <input type="text" id="labelA" placeholder="e.g., Fort Bragg, NC">
         </div>
         <div style="margin-bottom:12px">
+          <label for="stationA">Duty station (BAH area)</label>
+          <select id="stationA"><option value="">— choose to auto-fill BAH —</option></select>
+        </div>
+        <div style="margin-bottom:12px">
           <label for="bahA">Monthly BAH ($)</label>
           <input type="number" id="bahA" value="1800" min="0" step="1">
-          <div class="hint">Use the with- or without-dependents rate for your situation. Look it up at the <a href="https://www.travel.dod.mil/Allowances/Basic-Allowance-for-Housing/BAH-Rate-Lookup/" target="_blank" rel="noopener">official DoD BAH calculator</a>.</div>
+          <div class="hint">Auto-fills from station + grade + dependents; you can override. Or look up any ZIP at the <a href="https://www.travel.dod.mil/Allowances/Basic-Allowance-for-Housing/BAH-Rate-Lookup/" target="_blank" rel="noopener">DoD BAH calculator</a>.</div>
         </div>
         <div>
           <label for="stateA">State of legal residence</label>
@@ -198,9 +209,13 @@
           <input type="text" id="labelB" placeholder="e.g., San Diego, CA">
         </div>
         <div style="margin-bottom:12px">
+          <label for="stationB">Duty station (BAH area)</label>
+          <select id="stationB"><option value="">— choose to auto-fill BAH —</option></select>
+        </div>
+        <div style="margin-bottom:12px">
           <label for="bahB">Monthly BAH ($)</label>
           <input type="number" id="bahB" value="3300" min="0" step="1">
-          <div class="hint">Look up the new location's rate at the <a href="https://www.travel.dod.mil/Allowances/Basic-Allowance-for-Housing/BAH-Rate-Lookup/" target="_blank" rel="noopener">DoD BAH calculator</a>.</div>
+          <div class="hint">Auto-fills from station + grade + dependents; you can override. Or look up any ZIP at the <a href="https://www.travel.dod.mil/Allowances/Basic-Allowance-for-Housing/BAH-Rate-Lookup/" target="_blank" rel="noopener">DoD BAH calculator</a>.</div>
         </div>
         <div>
           <label for="stateB">State of legal residence</label>
@@ -226,7 +241,7 @@
     <div class="results" id="results"></div>
     <div class="diff" id="diffBox"></div>
     <div class="disclaimer">
-      <strong>Estimate only.</strong> Models 2026 base pay (incl. Executive Schedule caps), BAS, federal tax, FICA (with the Additional Medicare Tax), and state income tax using real 2026 brackets &amp; standard deductions — with optional spouse/household income for correct bracket placement, and combat-zone exclusion (enlisted &amp; warrant officers fully excluded; commissioned officers capped at max enlisted pay + IDP). BAH is user-entered. State tax credits, itemized deductions, and local taxes outside Maryland are not modeled. Verify with your finance office / MyPay before making financial decisions.
+      <strong>Estimate only.</strong> Models 2026 base pay (incl. Executive Schedule caps), BAS, federal tax, FICA (with the Additional Medicare Tax), and state income tax using real 2026 brackets &amp; standard deductions — with optional spouse/household income for correct bracket placement, and combat-zone exclusion (enlisted &amp; warrant officers fully excluded; commissioned officers capped at max enlisted pay + IDP). BAH auto-fills from official 2026 DoD (DTMO) rates by duty station, grade, and dependents — override anytime. State tax credits, itemized deductions, and local taxes outside Maryland are not modeled. Verify with your finance office / MyPay before making financial decisions.
     </div>
   </div>
 
@@ -234,6 +249,7 @@
   <div class="footnote" style="margin-top:10px"><strong>A Blue Star Families tool.</strong> Independent estimate for planning purposes; not affiliated with or endorsed by the U.S. Department of Defense or DFAS.</div>
 </main>
 
+<script src="bah-data.js"></script>
 <script>
 const YOS_LABELS = ["Less than 2","2","3","4","6","8","10","12","14","16","18","20","22","24","26","30","34","38+"];
 const PAY = {
@@ -274,6 +290,16 @@ const PAY_CAP = {"O-7":18808.20,"O-8":18808.20,"O-9":18808.20,"O-10":18808.20,"O
 // Combat-zone (CZTE) monthly exclusion cap for commissioned officers = max enlisted basic pay + IDP
 const CZTE_CAP = 10729 + 225;
 const ADDL_MEDI_THRESHOLD = 200000, ADDL_MEDI_RATE = 0.009;
+// BAH grade -> column index in bah-data.js arrays (E1..E9,W1..W5,O1E,O2E,O3E,O1..O10)
+const BAH_COL={"E-1":0,"E-2":1,"E-3":2,"E-4":3,"E-5":4,"E-6":5,"E-7":6,"E-8":7,"E-9":8,"W-1":9,"W-2":10,"W-3":11,"W-4":12,"W-5":13,"O-1E":14,"O-2E":15,"O-3E":16,"O-1":17,"O-2":18,"O-3":19,"O-4":20,"O-5":21,"O-6":22,"O-7":23,"O-8":24,"O-9":25,"O-10":26};
+function bahLookup(mha){
+  if(!mha) return null;
+  const dep=$("deps").value==="yes";
+  const src=dep?(typeof BAH_W!=="undefined"?BAH_W:null):(typeof BAH_WO!=="undefined"?BAH_WO:null);
+  if(!src||!src[mha]) return null;
+  const v=src[mha][BAH_COL[$("grade").value]];
+  return (v==null)?null:v;
+}
 
 const SPECIALS = [
   ["seapay","Career sea pay",805,true],
@@ -404,6 +430,16 @@ $("yos").value=4;
   Object.keys(STATES).forEach(k=>{const o=document.createElement("option");o.value=k;o.textContent=STATES[k].name;$(sid).appendChild(o);});
 });
 $("stateA").value="NC"; $("stateB").value="CA";
+
+// populate BAH duty-station dropdowns (sorted by area name)
+if(typeof MHA_NAMES!=="undefined"){
+  const opts=Object.entries(MHA_NAMES).sort((a,b)=>a[1].localeCompare(b[1]));
+  ["stationA","stationB"].forEach(sid=>{const sel=$(sid);opts.forEach(([code,nm])=>{const o=document.createElement("option");o.value=code;o.textContent=nm;sel.appendChild(o);});});
+}
+function applyBah(stationId,bahId){const v=bahLookup($(stationId).value);if(v!=null)$(bahId).value=v;}
+$("stationA").addEventListener("change",()=>{applyBah("stationA","bahA");calculate();});
+$("stationB").addEventListener("change",()=>{applyBah("stationB","bahB");calculate();});
+["grade","deps"].forEach(id=>$(id).addEventListener("change",()=>{applyBah("stationA","bahA");applyBah("stationB","bahB");calculate();}));
 
 const spWrap=$("specials");
 SPECIALS.forEach(([key,label,amt,tax])=>{
@@ -607,7 +643,7 @@ $("shareBtn").addEventListener("click",()=>{
   setTimeout(()=>b.textContent=t,1500);
 });
 
-$("sources").innerHTML='<strong>Data sources (2026):</strong> Basic pay — DFAS / FY2026 NDAA (3.8% raise, eff. 1 Jan 2026). BAS — DFAS ($476.95 enlisted / $328.48 officer). Federal brackets &amp; standard deduction — IRS Rev. Proc. 2025-32 (via Tax Foundation). FICA — Social Security wage base $184,500; Additional Medicare Tax 0.9% over $200,000. BAH — enter from the official DoD BAH Rate Lookup. State income tax — 2026 brackets &amp; standard deductions (Tax Foundation). Verify your state\'s exact military-pay rules.';
+$("sources").innerHTML='<strong>Data sources (2026):</strong> Basic pay — DFAS / FY2026 NDAA (3.8% raise, eff. 1 Jan 2026). BAS — DFAS ($476.95 enlisted / $328.48 officer). Federal brackets &amp; standard deduction — IRS Rev. Proc. 2025-32 (via Tax Foundation). FICA — Social Security wage base $184,500; Additional Medicare Tax 0.9% over $200,000. BAH — official 2026 DoD DTMO rate tables (all locations, all pay grades). State income tax — 2026 brackets &amp; standard deductions (Tax Foundation). Verify your state\'s exact military-pay rules.';
 
 applyState();
 calculate();
