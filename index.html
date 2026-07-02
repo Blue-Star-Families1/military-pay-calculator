@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Military Take-Home Pay Estimator — 2026</title>
+<meta name="description" content="Estimate 2026 U.S. military monthly take-home pay including basic pay, BAH, BAS, special pays, and federal/FICA/state taxes. Compare two duty stations. A Blue Star Families tool.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#1f3162; --steel:#0474bb; --sky:#b9d6f0; --gold:#b31f36; --bg:#eef3f8;
+    --card:#ffffff; --ink:#1f2a37; --muted:#5b6b7b; --line:#d3e0ee; --good:#1b7a3d;
+    --bad:#b31f36; --panel:#f7fafd;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Lato',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.45}
+  h1,h2,h3{font-family:'Playfair Display',Georgia,'Times New Roman',serif}
+  a{color:var(--steel)}
+  header{background:var(--navy);color:#fff;padding:24px 20px 24px}
+  header .wrap{max-width:1060px;margin:0 auto}
+  .brandrow{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+  .bsf-star{width:26px;height:26px;fill:#fff;flex:none}
+  .brandname{font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:18px;letter-spacing:.3px;color:#fff}
+  header h1{margin:0 0 6px;font-size:26px;letter-spacing:.2px}
+  header p{margin:0;color:#cfe0f2;font-size:14px;max-width:780px}
+  .badge{display:inline-block;background:var(--gold);color:#fff;font-weight:700;font-size:11px;
+    padding:3px 9px;border-radius:20px;letter-spacing:.5px;margin-bottom:8px;text-transform:uppercase}
+  main{max-width:1060px;margin:0 auto;padding:20px 16px 60px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px}
+  .card h2{margin:0 0 4px;font-size:16px;color:var(--navy)}
+  .card .sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+  label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;
+    text-transform:uppercase;letter-spacing:.3px}
+  select,input[type=number],input[type=text]{width:100%;padding:10px 11px;border:1px solid var(--line);
+    border-radius:9px;font-size:15px;background:var(--panel);color:var(--ink)}
+  select:focus,input:focus{outline:2px solid var(--sky);border-color:var(--sky)}
+  .hint{font-size:11px;color:var(--muted);margin-top:4px;font-weight:400;text-transform:none;letter-spacing:0}
+  .scenarios,.results{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .scn{border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--panel)}
+  .scn.a{border-top:4px solid var(--steel)} .scn.b{border-top:4px solid var(--gold)}
+  .scn h3{margin:0 0 12px;font-size:15px;display:flex;align-items:center;gap:8px}
+  .dot{width:11px;height:11px;border-radius:50%} .dot.a{background:var(--steel)} .dot.b{background:var(--gold)}
+  .specials{display:grid;gap:8px}
+  .sp-row{display:grid;grid-template-columns:22px 1fr 108px;align-items:center;gap:8px}
+  .sp-row input[type=number]{padding:7px 8px;font-size:14px}
+  .sp-row label{margin:0;text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink);font-size:13px}
+  .toggle-row{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px}
+  .toggle-row input{width:auto;flex:none}
+  .toggle-row label{margin:0;text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink)}
+  .res-card{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .res-head{padding:14px 16px;color:#fff} .res-head.a{background:var(--steel)} .res-head.b{background:var(--gold);color:#fff}
+  .res-head .lbl{font-size:13px;opacity:.9} .res-head .amt{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+  .res-head .yr{font-size:12px;opacity:.85;margin-top:2px}
+  .res-body{padding:14px 16px}
+  .line{display:flex;justify-content:space-between;padding:6px 0;font-size:14px;border-bottom:1px dashed var(--line)}
+  .line.sub-line{padding-left:14px;color:var(--muted);font-size:13px}
+  .line .v{font-variant-numeric:tabular-nums;font-weight:600}
+  .line.neg .v{color:var(--bad)}
+  .line.gross{font-weight:700;color:var(--navy)}
+  .line.total{border-bottom:none;border-top:2px solid var(--navy);margin-top:6px;padding-top:10px;font-size:16px;font-weight:800;color:var(--navy)}
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .metric{background:var(--bg);border-radius:9px;padding:9px 12px}
+  .metric .m-l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+  .metric .m-v{font-size:16px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
+  .diff{background:var(--navy);color:#fff;border-radius:12px;padding:18px 20px;margin-top:18px;text-align:center}
+  .diff .lbl{font-size:13px;color:#cfe0f2}
+  .diff .big{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;margin:4px 0}
+  .diff .annual{font-size:13px;color:#b9d6f0}
+  .up{color:#7ee0a0} .down{color:#ff9a9a}
+  .compare-toggle{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;color:var(--navy);margin-bottom:4px}
+  .compare-toggle input{width:auto;flex:none}
+  .disclaimer{font-size:12px;color:var(--muted);background:#fff8e6;border:1px solid #ead9a0;border-radius:10px;padding:12px 14px;margin-top:14px}
+  .hidden{display:none}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .btn{background:var(--panel);border:1px solid var(--line);color:var(--navy);font-weight:600;font-size:13px;padding:9px 14px;border-radius:9px;cursor:pointer}
+  .btn:hover{border-color:var(--sky)}
+  .footnote{font-size:12px;color:var(--muted);margin-top:22px;line-height:1.6}
+  @media(max-width:720px){.scenarios,.results{grid-template-columns:1fr}}
+  @media print{.actions{display:none} header{background:#0b2545 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brandrow">
+      <svg class="bsf-star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 7.1-1.01z"/></svg>
+      <span class="brandname">Blue Star Families</span>
+    </div>
+    <span class="badge">2026 Rates · Effective Jan 1, 2026</span>
+    <h1>Military Take-Home Pay Estimator</h1>
+    <p>Estimate a service member's monthly gross and <strong>take-home</strong> pay — basic pay, allowances, special pays, and estimated federal, FICA, and state taxes. Compare two duty stations to see how a move changes the paycheck. Results update as you type.</p>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+    <h2>Service member profile</h2>
+    <p class="sub">These apply to both scenarios below.</p>
+    <div class="grid">
+      <div>
+        <label for="grade">Pay grade / rank</label>
+        <select id="grade"></select>
+      </div>
+      <div>
+        <label for="yos">Years of service</label>
+        <select id="yos"></select>
+      </div>
+      <div>
+        <label for="filing">Federal filing status</label>
+        <select id="filing">
+          <option value="single">Single</option>
+          <option value="mfj">Married filing jointly</option>
+          <option value="hoh">Head of household</option>
+        </select>
+      </div>
+      <div>
+        <label for="tsp">TSP contribution (% of basic pay)</label>
+        <input type="number" id="tsp" value="5" min="0" max="100" step="1">
+      </div>
+      <div>
+        <label for="tsptype">TSP type</label>
+        <select id="tsptype">
+          <option value="trad">Traditional (pre-tax)</option>
+          <option value="roth">Roth (after-tax)</option>
+        </select>
+      </div>
+      <div>
+        <label for="sgli">SGLI life insurance</label>
+        <select id="sgli">
+          <option value="31">$500,000 coverage — $31.00/mo</option>
+          <option value="26.5">$400,000 — $26.50/mo</option>
+          <option value="20.5">$300,000 — $20.50/mo</option>
+          <option value="14.5">$200,000 — $14.50/mo</option>
+          <option value="8.5">$100,000 — $8.50/mo</option>
+          <option value="0">Declined — $0</option>
+        </select>
+      </div>
+      <div>
+        <label for="other">Other monthly deductions ($)</label>
+        <input type="number" id="other" value="0" min="0" step="1">
+        <div class="hint">Allotments, dental, AFRH, etc.</div>
+      </div>
+      <div>
+        <label for="otherinc">Spouse / other household income ($/yr, taxable)</label>
+        <input type="number" id="otherinc" value="0" min="0" step="1000">
+        <div class="hint">Stacks on top for correct tax brackets (esp. MFJ).</div>
+      </div>
+    </div>
+    <div class="toggle-row">
+      <input type="checkbox" id="combat">
+      <label for="combat">Serving in a designated combat zone (excludes eligible pay from federal income tax)</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Special &amp; incentive pays</h2>
+    <p class="sub">Check any that apply and adjust the monthly amount. Defaults are common 2026 maximums; your amount may differ by service and qualification. All are taxable except Family Separation Allowance.</p>
+    <div class="specials" id="specials"></div>
+  </div>
+
+  <div class="card">
+    <div class="compare-toggle">
+      <input type="checkbox" id="compareOn" checked>
+      <label for="compareOn">Compare two duty stations (a move)</label>
+    </div>
+    <p class="sub">Enter each location's monthly BAH and the state of legal residence (for taxes). BAS is added automatically.</p>
+    <div class="scenarios">
+      <div class="scn a">
+        <h3><span class="dot a"></span>Scenario A (current)</h3>
+        <div style="margin-bottom:12px">
+          <label for="labelA">Label (optional)</label>
+          <input type="text" id="labelA" placeholder="e.g., Fort Bragg, NC">
+        </div>
+        <div style="margin-bottom:12px">
+          <label for="bahA">Monthly BAH ($)</label>
+          <input type="number" id="bahA" value="1800" min="0" step="1">
+          <div class="hint">Use the with- or without-dependents rate for your situation. Look it up at the <a href="https://www.travel.dod.mil/Allowances/Basic-Allowance-for-Housing/BAH-Rate-Lookup/" target="_blank" rel="noopener">official DoD BAH calculator</a>.</div>
+        </div>
+        <div>
+          <label for="stateA">State of legal residence</label>
+          <select id="stateA"></select>
+          <div class="hint" id="stateNoteA"></div>
+        </div>
+        <div class="toggle-row">
+          <input type="checkbox" id="exemptA">
+          <label for="exemptA">This state exempts my active-duty military pay</label>
+        </div>
+      </div>
+
+      <div class="scn b" id="scnB">
+        <h3><span class="dot b"></span>Scenario B (new station)</h3>
+        <div style="margin-bottom:12px">
+          <label for="labelB">Label (optional)</label>
+          <input type="text" id="labelB" placeholder="e.g., San Diego, CA">
+        </div>
+        <div style="margin-bottom:12px">
+          <label for="bahB">Monthly BAH ($)</label>
+          <input type="number" id="bahB" value="3300" min="0" step="1">
+          <div class="hint">Look up the new location's rate at the <a href="https://www.travel.dod.mil/Allowances/Basic-Allowance-for-Housing/BAH-Rate-Lookup/" target="_blank" rel="noopener">DoD BAH calculator</a>.</div>
+        </div>
+        <div>
+          <label for="stateB">State of legal residence</label>
+          <select id="stateB"></select>
+          <div class="hint" id="stateNoteB"></div>
+        </div>
+        <div class="toggle-row">
+          <input type="checkbox" id="exemptB">
+          <label for="exemptB">This state exempts my active-duty military pay</label>
+        </div>
+        <div class="hint" style="margin-top:10px">Tip: your state of legal residence usually does <em>not</em> change just because you move duty stations (SCRA/MSRRA).</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Estimated pay</h2>
+    <p class="sub">Federal income tax is estimated as annual tax liability ÷ 12 using 2026 brackets and the standard deduction — actual paycheck withholding may differ.</p>
+    <div class="actions">
+      <button class="btn" id="printBtn" type="button">Print / Save as PDF</button>
+      <button class="btn" id="shareBtn" type="button">Copy shareable link</button>
+    </div>
+    <div class="results" id="results"></div>
+    <div class="diff" id="diffBox"></div>
+    <div class="disclaimer">
+      <strong>Estimate only.</strong> Models 2026 base pay (incl. Executive Schedule caps), BAS, federal tax, FICA (with the Additional Medicare Tax), and state income tax using real 2026 brackets &amp; standard deductions — with optional spouse/household income for correct bracket placement, and combat-zone exclusion (enlisted &amp; warrant officers fully excluded; commissioned officers capped at max enlisted pay + IDP). BAH is user-entered. State tax credits, itemized deductions, and local taxes outside Maryland are not modeled. Verify with your finance office / MyPay before making financial decisions.
+    </div>
+  </div>
+
+  <div class="footnote" id="sources"></div>
+  <div class="footnote" style="margin-top:10px"><strong>A Blue Star Families tool.</strong> Independent estimate for planning purposes; not affiliated with or endorsed by the U.S. Department of Defense or DFAS.</div>
+</main>
+
+<script>
+const YOS_LABELS = ["Less than 2","2","3","4","6","8","10","12","14","16","18","20","22","24","26","30","34","38+"];
+const PAY = {
+  "E-1":[2407,2407,2407,2407,2407,2407,2407,2407,2407,2407,2407,2407,2407,2407,2407,2407,2407,2407],
+  "E-2":[2698,2698,2698,2698,2698,2698,2698,2698,2698,2698,2698,2698,2698,2698,2698,2698,2698,2698],
+  "E-3":[2837,3015,3198,3198,3198,3198,3198,3198,3198,3198,3198,3198,3198,3198,3198,3198,3198,3198],
+  "E-4":[3142,3303,3482,3659,3815,3815,3815,3815,3815,3815,3815,3815,3815,3815,3815,3815,3815,3815],
+  "E-5":[3343,3598,3776,3947,4110,4300,4395,4422,4422,4422,4422,4422,4422,4422,4422,4422,4422,4422],
+  "E-6":[3401,3743,3908,4068,4236,4612,4760,5044,5131,5194,5268,5268,5268,5268,5268,5268,5268,5268],
+  "E-7":[3932,4291,4456,4673,4844,5135,5300,5592,5835,6001,6177,6245,6475,6598,7067,7067,7067,7067],
+  "E-8":[null,null,null,null,null,5657,5907,6062,6247,6448,6811,6995,7308,7482,7909,8068,8068,8068],
+  "E-9":[null,null,null,null,null,null,6910,7067,7264,7496,7731,8105,8423,8756,9268,9730,10217,10729],
+  "W-1":[4057,4494,4611,4859,5152,5585,5786,6069,6346,6565,6766,7010,7010,7010,7010,7010,7010,7010],
+  "W-2":[4622,5059,5194,5286,5586,6052,6282,6509,6787,7005,7201,7437,7592,7714,7714,7714,7714,7714],
+  "W-3":[5223,5441,5664,5738,5971,6431,6910,7136,7398,7666,8150,8477,8672,8879,9162,9162,9162,9162],
+  "W-4":[5720,6152,6329,6503,6802,7098,7398,7848,8244,8620,8928,9228,9669,10032,10445,10654,10654,10654],
+  "W-5":[null,null,null,null,null,null,null,null,null,null,null,10170,10686,11070,11495,12071,12673,13308],
+  "O-1":[4150,4320,5222,5222,5222,5222,5222,5222,5222,5222,5222,5222,5222,5222,5222,5222,5222,5222],
+  "O-2":[4782,5446,6272,6484,6618,6618,6618,6618,6618,6618,6618,6618,6618,6618,6618,6618,6618,6618],
+  "O-3":[5535,6273,6771,7383,7737,8125,8376,8788,9004,9004,9004,9004,9004,9004,9004,9004,9004,9004],
+  "O-4":[6294,7286,7773,7881,8332,8816,9419,9888,10214,10402,10510,10510,10510,10510,10510,10510,10510,10510],
+  "O-5":[7295,8219,8787,8894,9250,9462,9929,10272,10714,11392,11714,12033,12394,12394,12394,12394,12394,12394],
+  "O-6":[8751,9614,10245,10245,10284,10725,10784,10784,11396,12480,13115,13751,14113,14479,15189,15493,15493,15493],
+  "O-7":[11540,12076,12325,12522,12879,13232,13639,14046,14454,15736,16818,16818,16818,16818,16904,17242,17242,17242],
+  "O-8":[13888,14344,14645,14730,15107,15736,15882,16480,16652,17166,18598,18598,18999,18999,18999,18999,18999,18999],
+  "O-9":[18999,18999,18999,18999,18999,18999,18999,18999,18999,18999,18999,18999,18999,18999,18999,18999,18999,18999],
+  "O-10":[18999,18999,18999,18999,18999,18999,18999,18999,18999,18999,18999,18999,18999,18999,18999,18999,18999,18999],
+  "O-1E":[null,null,null,5222,5577,5783,5994,6201,6484,6484,6484,6484,6484,6484,6484,6484,6484,6484],
+  "O-2E":[null,null,null,6484,6618,6828,7184,7459,7664,7664,7664,7664,7664,7664,7664,7664,7664,7664],
+  "O-3E":[null,null,null,7383,7737,8125,8376,8788,9137,9337,9609,9609,9609,9609,9609,9609,9609,9609]
+};
+const GRADE_ORDER = ["E-1","E-2","E-3","E-4","E-5","E-6","E-7","E-8","E-9",
+  "W-1","W-2","W-3","W-4","W-5",
+  "O-1","O-1E","O-2","O-2E","O-3","O-3E","O-4","O-5","O-6","O-7","O-8","O-9","O-10"];
+const BAS_ENL = 476.95, BAS_OFF = 328.48;
+// 2026 Executive Schedule basic-pay caps: Level II (O-7..O-10), Level V (O-6 & below)
+const PAY_CAP = {"O-7":18808.20,"O-8":18808.20,"O-9":18808.20,"O-10":18808.20,"O-6":15258.30};
+// Combat-zone (CZTE) monthly exclusion cap for commissioned officers = max enlisted basic pay + IDP
+const CZTE_CAP = 10729 + 225;
+const ADDL_MEDI_THRESHOLD = 200000, ADDL_MEDI_RATE = 0.009;
+
+const SPECIALS = [
+  ["seapay","Career sea pay",805,true],
+  ["flight","Aviation / flight pay (ACIP)",1000,true],
+  ["hfp","Hostile fire / imminent danger pay",225,true],
+  ["hdip","Hazardous duty incentive pay (flight, demo, etc.)",150,true],
+  ["jump","Parachute (jump) pay",150,true],
+  ["halo","HALO parachute pay",225,true],
+  ["dive","Diving duty pay",340,true],
+  ["sub","Submarine duty pay",175,true],
+  ["hardship","Hardship duty pay",150,true],
+  ["sdap","Special duty assignment pay (SDAP)",450,true],
+  ["fsa","Family separation allowance (FSA)",250,false],
+  ["custom","Other special pay (taxable)",0,true]
+];
+
+const STD_DED = {single:16100, mfj:32200, hoh:24150};
+const BRACKETS = {
+  single:[[0,.10],[12400,.12],[50400,.22],[105700,.24],[201775,.32],[256225,.35],[640600,.37]],
+  mfj:[[0,.10],[24800,.12],[100800,.22],[211400,.24],[403550,.32],[512450,.35],[768700,.37]],
+  hoh:[[0,.10],[17700,.12],[67450,.22],[105700,.24],[201775,.32],[256200,.35],[640600,.37]]
+};
+const SS_RATE=.062, SS_WAGE_BASE=184500, MEDI_RATE=.0145;
+
+const STATES = {
+  "AL":{name:"Alabama",exemptDefault:true,flat:.05,sd:[3000,8500]},
+  "AK":{name:"Alaska",none:true},
+  "AZ":{name:"Arizona",exemptDefault:true,flat:.025,sd:[16100,32200]},
+  "AR":{name:"Arkansas",exemptDefault:true,flat:.039,sd:[2340,4680]},
+  "CA":{name:"California",sd:[5540,11080],b:{
+    single:[[0,.01],[11079,.02],[26264,.04],[41452,.06],[57542,.08],[72724,.093],[371479,.103],[445771,.113],[742953,.123],[1000000,.133]],
+    mfj:[[0,.01],[22158,.02],[52528,.04],[82904,.06],[115084,.08],[145448,.093],[742958,.103],[891542,.113],[1000000,.123],[1485906,.133]]}},
+  "CO":{name:"Colorado",flat:.044,sd:[16100,32200]},
+  "CT":{name:"Connecticut",exemptDefault:true,flat:.05,sd:[0,0]},
+  "DE":{name:"Delaware",sd:[3250,6500],b:{
+    single:[[0,0],[2000,.022],[5000,.039],[10000,.048],[20000,.052],[25000,.0555],[60000,.066]],
+    mfj:[[0,0],[2000,.022],[5000,.039],[10000,.048],[20000,.052],[25000,.0555],[60000,.066]]}},
+  "DC":{name:"Dist. of Columbia",flat:.085,sd:[16100,32200]},
+  "FL":{name:"Florida",none:true},
+  "GA":{name:"Georgia",flat:.0519,sd:[12000,24000]},
+  "HI":{name:"Hawaii",sd:[4400,8800],b:{
+    single:[[0,.014],[9600,.032],[14400,.055],[19200,.064],[24000,.068],[36000,.072],[48000,.076],[125000,.079],[175000,.0825],[225000,.09],[275000,.10],[325000,.11]],
+    mfj:[[0,.014],[19200,.032],[28800,.055],[38400,.064],[48000,.068],[72000,.072],[96000,.076],[250000,.079],[350000,.0825],[450000,.09],[550000,.10],[650000,.11]]}},
+  "ID":{name:"Idaho",flat:.053,sd:[16100,32200]},
+  "IL":{name:"Illinois",exemptDefault:true,flat:.0495,sd:[2775,5550]},
+  "IN":{name:"Indiana",exemptDefault:true,flat:.0295,sd:[1000,2000]},
+  "IA":{name:"Iowa",exemptDefault:true,flat:.039,sd:[16100,32200]},
+  "KS":{name:"Kansas",exemptDefault:true,flat:.0558,sd:[3605,8240]},
+  "KY":{name:"Kentucky",exemptDefault:true,flat:.035,sd:[3270,6540]},
+  "LA":{name:"Louisiana",exemptDefault:true,flat:.03,sd:[12500,25000]},
+  "ME":{name:"Maine",sd:[8350,16700],b:{
+    single:[[0,.058],[27399,.0675],[64849,.0715]],
+    mfj:[[0,.058],[54849,.0675],[129749,.0715]]}},
+  "MD":{name:"Maryland",sd:[3350,6700],local:.032,b:{
+    single:[[0,.02],[1000,.03],[2000,.04],[3000,.0475],[100000,.05],[125000,.0525],[150000,.055],[250000,.0575],[500000,.0625],[1000000,.065]],
+    mfj:[[0,.02],[1000,.03],[2000,.04],[3000,.0475],[150000,.05],[175000,.0525],[225000,.055],[300000,.0575],[600000,.0625],[1200000,.065]]}},
+  "MA":{name:"Massachusetts",flat:.05,sd:[4400,8800]},
+  "MI":{name:"Michigan",exemptDefault:true,flat:.0425,sd:[5800,11600]},
+  "MN":{name:"Minnesota",exemptDefault:true,flat:.068,sd:[14950,29900]},
+  "MS":{name:"Mississippi",sd:[8300,16600],b:{
+    single:[[0,0],[10000,.04]],mfj:[[0,0],[10000,.04]]}},
+  "MO":{name:"Missouri",exemptDefault:true,flat:.048,sd:[16100,32200]},
+  "MT":{name:"Montana",exemptDefault:true,flat:.059,sd:[16100,32200]},
+  "NE":{name:"Nebraska",exemptDefault:true,flat:.0455,sd:[8850,17700]},
+  "NV":{name:"Nevada",none:true},
+  "NH":{name:"New Hampshire",none:true},
+  "NJ":{name:"New Jersey",exemptDefault:true,flat:.0553,sd:[1000,2000]},
+  "NM":{name:"New Mexico",exemptDefault:true,flat:.049,sd:[16100,32200]},
+  "NY":{name:"New York",exemptDefault:true,flat:.055,sd:[8000,16050]},
+  "NC":{name:"North Carolina",flat:.0399,sd:[12750,25500]},
+  "ND":{name:"North Dakota",exemptDefault:true,flat:.025,sd:[16100,32200]},
+  "OH":{name:"Ohio",exemptDefault:true,sd:[0,0],b:{
+    single:[[0,0],[26050,.0275]],mfj:[[0,0],[26050,.0275]]}},
+  "OK":{name:"Oklahoma",exemptDefault:true,flat:.0475,sd:[6350,12700]},
+  "OR":{name:"Oregon",sd:[2910,5820],b:{
+    single:[[0,.0475],[4550,.0675],[11400,.0875],[125000,.099]],
+    mfj:[[0,.0475],[9100,.0675],[22800,.0875],[250000,.099]]}},
+  "PA":{name:"Pennsylvania",flat:.0307,sd:[0,0]},
+  "RI":{name:"Rhode Island",sd:[11200,22400],b:{
+    single:[[0,.0375],[82050,.0475],[186450,.0599]],
+    mfj:[[0,.0375],[82050,.0475],[186450,.0599]]}},
+  "SC":{name:"South Carolina",sd:[8350,16700],b:{
+    single:[[0,0],[3640,.03],[18230,.06]],mfj:[[0,0],[3640,.03],[18230,.06]]}},
+  "SD":{name:"South Dakota",none:true},
+  "TN":{name:"Tennessee",none:true},
+  "TX":{name:"Texas",none:true},
+  "UT":{name:"Utah",flat:.045,sd:[16100,32200]},
+  "VT":{name:"Vermont",sd:[7650,15300],b:{
+    single:[[0,.0335],[49400,.066],[119700,.076],[249700,.0875]],
+    mfj:[[0,.0335],[82500,.066],[199450,.076],[304000,.0875]]}},
+  "VA":{name:"Virginia",sd:[8750,17500],b:{
+    single:[[0,.02],[3000,.03],[5000,.05],[17000,.0575]],
+    mfj:[[0,.02],[3000,.03],[5000,.05],[17000,.0575]]}},
+  "WA":{name:"Washington",none:true},
+  "WV":{name:"West Virginia",exemptDefault:true,sd:[0,0],b:{
+    single:[[0,.0222],[10000,.0296],[25000,.0333],[40000,.0444],[60000,.0482]],
+    mfj:[[0,.0222],[10000,.0296],[25000,.0333],[40000,.0444],[60000,.0482]]}},
+  "WI":{name:"Wisconsin",exemptDefault:true,flat:.053,sd:[13230,24490]},
+  "WY":{name:"Wyoming",none:true}
+};
+
+function stateTaxAnnual(code, annualTaxable, filing){
+  const s=STATES[code]; if(!s || s.none) return 0;
+  const fi=(filing==="mfj")?1:0;
+  const sd=(s.sd?s.sd[fi]:0);
+  const inc=Math.max(0, annualTaxable - sd);
+  let tax=0;
+  if(s.b){
+    const br=s.b[(filing==="mfj")?"mfj":"single"];
+    for(let i=0;i<br.length;i++){
+      const lo=br[i][0], rate=br[i][1];
+      const hi=(i+1<br.length)?br[i+1][0]:Infinity;
+      if(inc>lo) tax+=(Math.min(inc,hi)-lo)*rate; else break;
+    }
+  } else if(s.flat!=null){
+    tax = inc*s.flat;
+  }
+  if(s.local) tax += inc*s.local;
+  return tax;
+}
+
+const $=id=>document.getElementById(id);
+GRADE_ORDER.forEach(g=>{const o=document.createElement("option");o.value=g;o.textContent=g;$("grade").appendChild(o);});
+$("grade").value="E-5";
+YOS_LABELS.forEach((l,i)=>{const o=document.createElement("option");o.value=i;o.textContent=l;$("yos").appendChild(o);});
+$("yos").value=4;
+["stateA","stateB"].forEach(sid=>{
+  Object.keys(STATES).forEach(k=>{const o=document.createElement("option");o.value=k;o.textContent=STATES[k].name;$(sid).appendChild(o);});
+});
+$("stateA").value="NC"; $("stateB").value="CA";
+
+const spWrap=$("specials");
+SPECIALS.forEach(([key,label,amt,tax])=>{
+  const row=document.createElement("div");row.className="sp-row";
+  row.innerHTML='<input type="checkbox" id="sp_'+key+'">'+
+    '<label for="sp_'+key+'">'+label+(tax?"":' <em style="color:var(--good)">(non-taxable)</em>')+'</label>'+
+    '<input type="number" id="spamt_'+key+'" value="'+amt+'" min="0" step="1">';
+  spWrap.appendChild(row);
+});
+
+function stateNote(code){
+  const s=STATES[code];
+  if(s.none) return "No state income tax.";
+  if(s.exemptDefault) return "Fully exempts active-duty military pay (box pre-checked).";
+  return "Taxes active-duty military pay (2026 brackets applied)"+(s.local?", incl. avg. local tax.":". Check the box only if you qualify for an exemption.");
+}
+function syncStateNote(sid,eid,nid){
+  const code=$(sid).value;
+  $(nid).textContent=stateNote(code);
+  const s=STATES[code];
+  $(eid).checked = !!(s.none||s.exemptDefault);
+}
+["A","B"].forEach(s=>{
+  $("state"+s).addEventListener("change",()=>{syncStateNote("state"+s,"exempt"+s,"stateNote"+s);calculate();});
+});
+syncStateNote("stateA","exemptA","stateNoteA");
+syncStateNote("stateB","exemptB","stateNoteB");
+
+$("compareOn").addEventListener("change",()=>{
+  $("scnB").classList.toggle("hidden",!$("compareOn").checked);
+  calculate();
+});
+
+function basicPay(grade,yosIdx){
+  const row=PAY[grade];if(!row)return 0;
+  let v=null;
+  if(row[yosIdx]!=null) v=row[yosIdx];
+  if(v==null) for(let i=yosIdx;i>=0;i--) if(row[i]!=null){v=row[i];break;}
+  if(v==null) for(let i=yosIdx;i<row.length;i++) if(row[i]!=null){v=row[i];break;}
+  if(v==null) return 0;
+  const cap=PAY_CAP[grade];
+  return cap?Math.min(v,cap):v;
+}
+// federal income tax on an annual taxable amount (standard deduction applied here)
+function fedTaxOnAnnual(annualTaxable, filing){
+  const inc=Math.max(0, annualTaxable - STD_DED[filing]);
+  const br=BRACKETS[filing];let tax=0;
+  for(let i=0;i<br.length;i++){
+    const lo=br[i][0], rate=br[i][1];
+    const hi=(i+1<br.length)?br[i+1][0]:Infinity;
+    if(inc>lo) tax+=(Math.min(inc,hi)-lo)*rate; else break;
+  }
+  return tax;
+}
+
+function calcScenario(bah, stateCode, stateExempt){
+  const grade=$("grade").value, yosIdx=+$("yos").value, filing=$("filing").value;
+  const combat=$("combat").checked;
+  const isOfficer = grade.startsWith("O") || grade.startsWith("W");
+  const base=basicPay(grade,yosIdx);
+  const bas=isOfficer?BAS_OFF:BAS_ENL;
+
+  let spTaxable=0, spNontax=0, spList=[];
+  SPECIALS.forEach(([key,label,,tax])=>{
+    if($("sp_"+key).checked){
+      const amt=+$("spamt_"+key).value||0;
+      if(amt>0){ spList.push([label,amt]); tax?spTaxable+=amt:spNontax+=amt; }
+    }
+  });
+
+  const gross = base + bah + bas + spTaxable + spNontax;
+
+  const tspPct=(+$("tsp").value||0)/100;
+  const tspAmt=base*tspPct;
+  const tspTrad = $("tsptype").value==="trad";
+
+  // member monthly taxable income (basic + taxable specials, less traditional TSP)
+  let memberTaxMonthly = base + spTaxable;
+  if(tspTrad) memberTaxMonthly -= tspAmt;
+  memberTaxMonthly = Math.max(0, memberTaxMonthly);
+  // combat-zone exclusion: enlisted & warrant officers fully excluded;
+  // commissioned officers capped at max enlisted pay + IDP
+  if(combat){
+    memberTaxMonthly = grade.startsWith("O")
+      ? Math.max(0, memberTaxMonthly - CZTE_CAP)
+      : 0;
+  }
+  const memberAnnual = memberTaxMonthly*12;
+  const otherInc = Math.max(0, +$("otherinc").value||0);
+
+  // marginal federal tax: member income stacked on top of other household income
+  const fedTax = (fedTaxOnAnnual(memberAnnual+otherInc, filing) - fedTaxOnAnnual(otherInc, filing))/12;
+
+  // FICA — applies even in a combat zone; incl. Additional Medicare Tax
+  const ficaWageMonthly = base + spTaxable;
+  const ss = Math.min(ficaWageMonthly, SS_WAGE_BASE/12) * SS_RATE;
+  const annualWage = ficaWageMonthly*12;
+  const medi = ficaWageMonthly*MEDI_RATE + Math.max(0, annualWage-ADDL_MEDI_THRESHOLD)*ADDL_MEDI_RATE/12;
+
+  // state income tax — marginal, stacked, conforms to federal combat exclusion
+  let stateTax=0;
+  const st=STATES[stateCode];
+  if(!stateExempt && !st.none){
+    stateTax = (stateTaxAnnual(stateCode, memberAnnual+otherInc, filing)
+              - stateTaxAnnual(stateCode, otherInc, filing))/12;
+  }
+
+  const sgli=+$("sgli").value||0;
+  const other=+$("other").value||0;
+
+  const totalTax = fedTax + ss + medi + stateTax;
+  const deductions = totalTax + tspAmt + sgli + other;
+  const takeHome = gross - deductions;
+  const effRate = gross>0 ? (totalTax/gross) : 0;
+  const keepPct = gross>0 ? (takeHome/gross) : 0;
+
+  return {base,bah,bas,spList,gross,fedTax,ss,medi,stateTax,tspAmt,sgli,other,
+    takeHome,totalTax,effRate,keepPct,stateCode,combat};
+}
+
+const money=n=>"$"+Math.round(n).toLocaleString("en-US");
+const money2=n=>"$"+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct=n=>(n*100).toFixed(1)+"%";
+
+function renderScenario(r,label,cls){
+  const stName=STATES[r.stateCode].name;
+  let sp="";
+  r.spList.forEach(([l,a])=>{sp+='<div class="line sub-line"><span>'+l+'</span><span class="v">'+money(a)+'</span></div>';});
+  return '<div class="res-card">'+
+    '<div class="res-head '+cls+'"><div class="lbl">'+label+' — monthly take-home</div>'+
+      '<div class="amt">'+money(r.takeHome)+'</div><div class="yr">'+money(r.takeHome*12)+' / year</div></div>'+
+    '<div class="res-body">'+
+      '<div class="line"><span>Basic pay</span><span class="v">'+money(r.base)+'</span></div>'+
+      '<div class="line"><span>BAH (housing)</span><span class="v">'+money(r.bah)+'</span></div>'+
+      '<div class="line"><span>BAS (subsistence)</span><span class="v">'+money(r.bas)+'</span></div>'+
+      sp+
+      '<div class="line gross"><span>Gross monthly pay</span><span class="v">'+money(r.gross)+'</span></div>'+
+      '<div class="line neg"><span>Federal income tax'+(r.combat?" (combat-excluded)":"")+'</span><span class="v">−'+money(r.fedTax)+'</span></div>'+
+      '<div class="line neg"><span>Social Security (6.2%)</span><span class="v">−'+money(r.ss)+'</span></div>'+
+      '<div class="line neg"><span>Medicare (1.45%)</span><span class="v">−'+money(r.medi)+'</span></div>'+
+      '<div class="line neg"><span>State tax — '+stName+'</span><span class="v">−'+money(r.stateTax)+'</span></div>'+
+      '<div class="line neg"><span>TSP contribution</span><span class="v">−'+money(r.tspAmt)+'</span></div>'+
+      '<div class="line neg"><span>SGLI</span><span class="v">−'+money2(r.sgli)+'</span></div>'+
+      '<div class="line neg"><span>Other deductions</span><span class="v">−'+money(r.other)+'</span></div>'+
+      '<div class="line total"><span>Estimated take-home</span><span class="v">'+money(r.takeHome)+'</span></div>'+
+      '<div class="metrics">'+
+        '<div class="metric"><div class="m-l">Effective tax rate</div><div class="m-v">'+pct(r.effRate)+'</div></div>'+
+        '<div class="metric"><div class="m-l">Take-home % of gross</div><div class="m-v">'+pct(r.keepPct)+'</div></div>'+
+      '</div>'+
+    '</div></div>';
+}
+
+function calculate(){
+  const compare=$("compareOn").checked;
+  const rA=calcScenario(+$("bahA").value||0,$("stateA").value,$("exemptA").checked);
+  let html=renderScenario(rA,$("labelA").value||"Scenario A","a");
+  if(compare){
+    const rB=calcScenario(+$("bahB").value||0,$("stateB").value,$("exemptB").checked);
+    html+=renderScenario(rB,$("labelB").value||"Scenario B","b");
+    $("results").style.gridTemplateColumns="1fr 1fr";
+    $("results").innerHTML=html;
+    const d=rB.takeHome-rA.takeHome;
+    const up=d>=0;
+    $("diffBox").style.display="block";
+    $("diffBox").innerHTML='<div class="lbl">Change in monthly take-home pay (B vs A)</div>'+
+      '<div class="big '+(up?'up':'down')+'">'+(up?'+':'−')+money(Math.abs(d))+' / mo</div>'+
+      '<div class="annual">'+(up?'+':'−')+money(Math.abs(d)*12)+' per year</div>';
+  } else {
+    $("results").style.gridTemplateColumns="1fr";
+    $("results").innerHTML=html;
+    $("diffBox").style.display="none";
+  }
+}
+
+document.querySelectorAll("input,select").forEach(el=>el.addEventListener("input",calculate));
+
+// ---- shareable link + print ----
+function collectState(){
+  const p=new URLSearchParams();
+  document.querySelectorAll("input[id],select[id]").forEach(el=>{
+    p.set(el.id, el.type==="checkbox"?(el.checked?"1":"0"):el.value);
+  });
+  return p.toString();
+}
+function applyState(){
+  const p=new URLSearchParams(location.search);
+  if(![...p.keys()].length) return;
+  document.querySelectorAll("input[id],select[id]").forEach(el=>{
+    if(p.has(el.id)){ if(el.type==="checkbox") el.checked=p.get(el.id)==="1"; else el.value=p.get(el.id); }
+  });
+  $("stateNoteA").textContent=stateNote($("stateA").value);
+  $("stateNoteB").textContent=stateNote($("stateB").value);
+  $("scnB").classList.toggle("hidden",!$("compareOn").checked);
+}
+$("printBtn").addEventListener("click",()=>window.print());
+$("shareBtn").addEventListener("click",()=>{
+  const url=location.origin+location.pathname+"?"+collectState();
+  history.replaceState(null,"",url);
+  if(navigator.clipboard) navigator.clipboard.writeText(url).catch(()=>{});
+  const b=$("shareBtn"), t=b.textContent; b.textContent="Link copied!";
+  setTimeout(()=>b.textContent=t,1500);
+});
+
+$("sources").innerHTML='<strong>Data sources (2026):</strong> Basic pay — DFAS / FY2026 NDAA (3.8% raise, eff. 1 Jan 2026). BAS — DFAS ($476.95 enlisted / $328.48 officer). Federal brackets &amp; standard deduction — IRS Rev. Proc. 2025-32 (via Tax Foundation). FICA — Social Security wage base $184,500; Additional Medicare Tax 0.9% over $200,000. BAH — enter from the official DoD BAH Rate Lookup. State income tax — 2026 brackets &amp; standard deductions (Tax Foundation). Verify your state\'s exact military-pay rules.';
+
+applyState();
+calculate();
+</script>
+</body>
+</html>
