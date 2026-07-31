@@ -723,12 +723,39 @@ function applyState(){
   $("scnB").classList.toggle("hidden",!$("compareOn").checked);
 }
 $("printBtn").addEventListener("click",()=>window.print());
+// Legacy clipboard path for non-secure contexts (file://, plain http) where
+// navigator.clipboard is unavailable.
+function legacyCopy(text){
+  try{
+    const ta=document.createElement("textarea");
+    ta.value=text; ta.setAttribute("readonly","");
+    ta.style.position="fixed"; ta.style.top="-1000px";
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0,text.length);
+    const okc=document.execCommand("copy");
+    document.body.removeChild(ta);
+    return okc;
+  }catch(e){ return false; }
+}
 $("shareBtn").addEventListener("click",()=>{
-  const url=location.origin+location.pathname+"?"+collectState();
-  history.replaceState(null,"",url);
-  if(navigator.clipboard) navigator.clipboard.writeText(url).catch(()=>{});
-  const b=$("shareBtn"), t=b.textContent; b.textContent="Link copied!";
-  setTimeout(()=>b.textContent=t,1500);
+  const qs=collectState();
+  const isFile = location.protocol==="file:";
+  const url = isFile ? (location.href.split("?")[0]+"?"+qs)
+                     : (location.origin+location.pathname+"?"+qs);
+  // keep the address bar in sync so the link is recoverable even if copying fails
+  if(!isFile){ try{ history.replaceState(null,"",url); }catch(e){} }
+  const b=$("shareBtn"), original="Copy shareable link";
+  const done=okc=>{
+    b.textContent = okc ? "Link copied!"
+                        : (isFile ? "Save the file first to share"
+                                  : "Copy failed — use the address bar");
+    setTimeout(()=>{b.textContent=original;},2200);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext!==false){
+    navigator.clipboard.writeText(url).then(()=>done(true)).catch(()=>done(legacyCopy(url)));
+  } else {
+    done(legacyCopy(url));
+  }
 });
 
 $("sources").innerHTML='<strong>Data sources (2026):</strong> Basic pay — DFAS / FY2026 NDAA (3.8% raise, eff. 1 Jan 2026). BAS — DFAS ($476.95 enlisted / $328.48 officer). Federal brackets &amp; standard deduction — IRS Rev. Proc. 2025-32 (via Tax Foundation). FICA — Social Security wage base $184,500; Additional Medicare Tax 0.9% over $200,000. BAH — official 2026 DoD DTMO rate tables (all locations, all pay grades). State income tax — 2026 brackets &amp; standard deductions (Tax Foundation). Verify your state\'s exact military-pay rules.';
