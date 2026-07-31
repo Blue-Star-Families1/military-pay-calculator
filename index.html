@@ -80,7 +80,16 @@
   .btn:hover{border-color:var(--sky)}
   .footnote{font-size:12px;color:var(--muted);margin-top:22px;line-height:1.6}
   @media(max-width:720px){.scenarios,.results{grid-template-columns:1fr}}
-  @media print{.actions{display:none} header{background:#0b2545 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  @media print{
+    .actions{display:none}
+    body{background:#fff}
+    header{background:var(--navy) !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .res-head{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .card{border:1px solid #bbb;break-inside:avoid;page-break-inside:avoid}
+    .res-card{break-inside:avoid;page-break-inside:avoid}
+    .disclaimer,.footnote{break-inside:avoid;page-break-inside:avoid}
+    a[href^="http"]::after{content:" (" attr(href) ")";font-size:10px;color:#555}
+  }
 </style>
 </head>
 <body>
@@ -150,11 +159,6 @@
         <label for="other">Other monthly deductions ($)</label>
         <input type="number" id="other" value="0" min="0" step="1">
         <div class="hint">Allotments, dental, AFRH, etc.</div>
-      </div>
-      <div>
-        <label for="otherinc">Spouse / other household income ($/yr, taxable)</label>
-        <input type="number" id="otherinc" value="0" min="0" step="1000">
-        <div class="hint">Stacks on top for correct tax brackets (esp. MFJ).</div>
       </div>
     </div>
     <div class="toggle-row">
@@ -238,10 +242,10 @@
       <button class="btn" id="printBtn" type="button">Print / Save as PDF</button>
       <button class="btn" id="shareBtn" type="button">Copy shareable link</button>
     </div>
-    <div class="results" id="results"></div>
-    <div class="diff" id="diffBox"></div>
+    <div class="results" id="results" aria-live="polite" aria-atomic="false"></div>
+    <div class="diff" id="diffBox" aria-live="polite"></div>
     <div class="disclaimer">
-      <strong>Estimate only.</strong> Models 2026 base pay (incl. Executive Schedule caps), BAS, federal tax, FICA (with the Additional Medicare Tax), and state income tax using real 2026 brackets &amp; standard deductions — with optional spouse/household income for correct bracket placement, and combat-zone exclusion (enlisted &amp; warrant officers fully excluded; commissioned officers capped at max enlisted pay + IDP). BAH auto-fills from official 2026 DoD (DTMO) rates by duty station, grade, and dependents — override anytime. State tax credits, itemized deductions, and local taxes outside Maryland are not modeled. Verify with your finance office / MyPay before making financial decisions.
+      <strong>Estimate only.</strong> Models 2026 base pay (incl. Executive Schedule caps), BAS, federal tax, FICA (with the Additional Medicare Tax), and state income tax using real 2026 brackets &amp; standard deductions, and combat-zone exclusion (enlisted &amp; warrant officers fully excluded; commissioned officers capped at max enlisted pay + IDP). BAH auto-fills from official 2026 DoD (DTMO) rates by duty station, grade, and dependents — override anytime. State tax credits, itemized deductions, and local taxes outside Maryland are not modeled. Verify with your finance office / MyPay before making financial decisions.
     </div>
   </div>
 
@@ -251,6 +255,9 @@
 
 <script src="bah-data.js"></script>
 <script>
+// escape user-supplied text before it reaches innerHTML (labels are shareable via URL)
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+
 const YOS_LABELS = ["Less than 2","2","3","4","6","8","10","12","14","16","18","20","22","24","26","30","34","38+"];
 const PAY = {
   "E-1":[2407,2407,2407,2407,2407,2407,2407,2407,2407,2407,2407,2407,2407,2407,2407,2407,2407,2407],
@@ -325,32 +332,36 @@ const BRACKETS = {
 const SS_RATE=.062, SS_WAGE_BASE=184500, MEDI_RATE=.0145;
 
 const STATES = {
-  "AL":{name:"Alabama",exemptDefault:true,flat:.05,sd:[3000,8500]},
+  "AL":{name:"Alabama",fedDeduct:true,sd:[3000,8500],b:{single:[[0,.02],[500,.04],[3000,.05]],mfj:[[0,.02],[1000,.04],[6000,.05]]}},
   "AK":{name:"Alaska",none:true},
   "AZ":{name:"Arizona",exemptDefault:true,flat:.025,sd:[16100,32200]},
   "AR":{name:"Arkansas",exemptDefault:true,flat:.039,sd:[2340,4680]},
-  "CA":{name:"California",sd:[5540,11080],b:{
+  "CA":{name:"California",cond:true,sd:[5540,11080],b:{
     single:[[0,.01],[11079,.02],[26264,.04],[41452,.06],[57542,.08],[72724,.093],[371479,.103],[445771,.113],[742953,.123],[1000000,.133]],
     mfj:[[0,.01],[22158,.02],[52528,.04],[82904,.06],[115084,.08],[145448,.093],[742958,.103],[891542,.113],[1000000,.123],[1485906,.133]]}},
   "CO":{name:"Colorado",flat:.044,sd:[16100,32200]},
-  "CT":{name:"Connecticut",exemptDefault:true,flat:.05,sd:[0,0]},
+  "CT":{name:"Connecticut",cond:true,sd:[0,0],b:{
+    single:[[0,.02],[10000,.045],[50000,.055],[100000,.06],[200000,.065],[250000,.069],[500000,.0699]],
+    mfj:[[0,.02],[20000,.045],[100000,.055],[200000,.06],[400000,.065],[500000,.069],[1000000,.0699]]}},
   "DE":{name:"Delaware",sd:[3250,6500],b:{
     single:[[0,0],[2000,.022],[5000,.039],[10000,.048],[20000,.052],[25000,.0555],[60000,.066]],
     mfj:[[0,0],[2000,.022],[5000,.039],[10000,.048],[20000,.052],[25000,.0555],[60000,.066]]}},
-  "DC":{name:"Dist. of Columbia",flat:.085,sd:[16100,32200]},
+  "DC":{name:"Dist. of Columbia",sd:[16100,32200],b:{
+    single:[[0,.04],[10000,.06],[40000,.065],[60000,.085],[250000,.0925],[500000,.0975],[1000000,.1075]],
+    mfj:[[0,.04],[10000,.06],[40000,.065],[60000,.085],[250000,.0925],[500000,.0975],[1000000,.1075]]}},
   "FL":{name:"Florida",none:true},
   "GA":{name:"Georgia",flat:.0519,sd:[12000,24000]},
   "HI":{name:"Hawaii",sd:[4400,8800],b:{
     single:[[0,.014],[9600,.032],[14400,.055],[19200,.064],[24000,.068],[36000,.072],[48000,.076],[125000,.079],[175000,.0825],[225000,.09],[275000,.10],[325000,.11]],
     mfj:[[0,.014],[19200,.032],[28800,.055],[38400,.064],[48000,.068],[72000,.072],[96000,.076],[250000,.079],[350000,.0825],[450000,.09],[550000,.10],[650000,.11]]}},
-  "ID":{name:"Idaho",flat:.053,sd:[16100,32200]},
+  "ID":{name:"Idaho",cond:true,flat:.053,sd:[16100,32200]},
   "IL":{name:"Illinois",exemptDefault:true,flat:.0495,sd:[2775,5550]},
   "IN":{name:"Indiana",exemptDefault:true,flat:.0295,sd:[1000,2000]},
   "IA":{name:"Iowa",exemptDefault:true,flat:.039,sd:[16100,32200]},
-  "KS":{name:"Kansas",exemptDefault:true,flat:.0558,sd:[3605,8240]},
+  "KS":{name:"Kansas",sd:[3605,8240],b:{single:[[0,.052],[23000,.0558]],mfj:[[0,.052],[46000,.0558]]}},
   "KY":{name:"Kentucky",exemptDefault:true,flat:.035,sd:[3270,6540]},
-  "LA":{name:"Louisiana",exemptDefault:true,flat:.03,sd:[12500,25000]},
-  "ME":{name:"Maine",sd:[8350,16700],b:{
+  "LA":{name:"Louisiana",flat:.03,sd:[12500,25000]},
+  "ME":{name:"Maine",cond:true,sd:[8350,16700],b:{
     single:[[0,.058],[27399,.0675],[64849,.0715]],
     mfj:[[0,.058],[54849,.0675],[129749,.0715]]}},
   "MD":{name:"Maryland",sd:[3350,6700],local:.032,b:{
@@ -363,21 +374,23 @@ const STATES = {
     single:[[0,0],[10000,.04]],mfj:[[0,0],[10000,.04]]}},
   "MO":{name:"Missouri",exemptDefault:true,flat:.048,sd:[16100,32200]},
   "MT":{name:"Montana",exemptDefault:true,flat:.059,sd:[16100,32200]},
-  "NE":{name:"Nebraska",exemptDefault:true,flat:.0455,sd:[8850,17700]},
+  "NE":{name:"Nebraska",sd:[8850,17700],b:{single:[[0,.0246],[4130,.0351],[24760,.0455]],mfj:[[0,.0246],[8250,.0351],[49530,.0455]]}},
   "NV":{name:"Nevada",none:true},
   "NH":{name:"New Hampshire",none:true},
-  "NJ":{name:"New Jersey",exemptDefault:true,flat:.0553,sd:[1000,2000]},
+  "NJ":{name:"New Jersey",sd:[1000,2000],b:{
+    single:[[0,.014],[20000,.0175],[35000,.035],[40000,.0553],[75000,.0637],[500000,.0897],[1000000,.1075]],
+    mfj:[[0,.014],[20000,.0175],[50000,.0245],[70000,.035],[80000,.0553],[150000,.0637],[500000,.0897],[1000000,.1075]]}},
   "NM":{name:"New Mexico",exemptDefault:true,flat:.049,sd:[16100,32200]},
-  "NY":{name:"New York",exemptDefault:true,flat:.055,sd:[8000,16050]},
+  "NY":{name:"New York",cond:true,flat:.055,sd:[8000,16050]},
   "NC":{name:"North Carolina",flat:.0399,sd:[12750,25500]},
   "ND":{name:"North Dakota",exemptDefault:true,flat:.025,sd:[16100,32200]},
-  "OH":{name:"Ohio",exemptDefault:true,sd:[0,0],b:{
+  "OH":{name:"Ohio",cond:true,sd:[0,0],b:{
     single:[[0,0],[26050,.0275]],mfj:[[0,0],[26050,.0275]]}},
   "OK":{name:"Oklahoma",exemptDefault:true,flat:.0475,sd:[6350,12700]},
-  "OR":{name:"Oregon",sd:[2910,5820],b:{
+  "OR":{name:"Oregon",cond:true,sd:[2910,5820],credit:[256,512],b:{
     single:[[0,.0475],[4550,.0675],[11400,.0875],[125000,.099]],
     mfj:[[0,.0475],[9100,.0675],[22800,.0875],[250000,.099]]}},
-  "PA":{name:"Pennsylvania",flat:.0307,sd:[0,0]},
+  "PA":{name:"Pennsylvania",cond:true,flat:.0307,sd:[0,0]},
   "RI":{name:"Rhode Island",sd:[11200,22400],b:{
     single:[[0,.0375],[82050,.0475],[186450,.0599]],
     mfj:[[0,.0375],[82050,.0475],[186450,.0599]]}},
@@ -386,26 +399,30 @@ const STATES = {
   "SD":{name:"South Dakota",none:true},
   "TN":{name:"Tennessee",none:true},
   "TX":{name:"Texas",none:true},
-  "UT":{name:"Utah",flat:.045,sd:[16100,32200]},
-  "VT":{name:"Vermont",sd:[7650,15300],b:{
+  "UT":{name:"Utah",flat:.045,sd:[0,0],credit:[966,1932],creditPhase:{rate:.013,threshold:[16000,32000]}},
+  "VT":{name:"Vermont",cond:true,sd:[7650,15300],b:{
     single:[[0,.0335],[49400,.066],[119700,.076],[249700,.0875]],
     mfj:[[0,.0335],[82500,.066],[199450,.076],[304000,.0875]]}},
   "VA":{name:"Virginia",sd:[8750,17500],b:{
     single:[[0,.02],[3000,.03],[5000,.05],[17000,.0575]],
     mfj:[[0,.02],[3000,.03],[5000,.05],[17000,.0575]]}},
   "WA":{name:"Washington",none:true},
-  "WV":{name:"West Virginia",exemptDefault:true,sd:[0,0],b:{
+  "WV":{name:"West Virginia",sd:[0,0],b:{
     single:[[0,.0222],[10000,.0296],[25000,.0333],[40000,.0444],[60000,.0482]],
     mfj:[[0,.0222],[10000,.0296],[25000,.0333],[40000,.0444],[60000,.0482]]}},
-  "WI":{name:"Wisconsin",exemptDefault:true,flat:.053,sd:[13230,24490]},
+  "WI":{name:"Wisconsin",sd:[13960,25840],b:{
+    single:[[0,.035],[15110,.044],[51950,.053],[332720,.0765]],
+    mfj:[[0,.035],[20150,.044],[69260,.053],[443630,.0765]]}},
   "WY":{name:"Wyoming",none:true}
 };
 
-function stateTaxAnnual(code, annualTaxable, filing){
+function stateTaxAnnual(code, annualTaxable, filing, fedAnnual){
   const s=STATES[code]; if(!s || s.none) return 0;
+  if(!(annualTaxable>0)) return 0;
   const fi=(filing==="mfj")?1:0;
   const sd=(s.sd?s.sd[fi]:0);
-  const inc=Math.max(0, annualTaxable - sd);
+  const fedDed=(s.fedDeduct)?Math.max(0, fedAnnual||0):0;   // e.g., Alabama: deduct federal income tax paid
+  const inc=Math.max(0, annualTaxable - sd - fedDed);
   let tax=0;
   if(s.b){
     const br=s.b[(filing==="mfj")?"mfj":"single"];
@@ -418,6 +435,11 @@ function stateTaxAnnual(code, annualTaxable, filing){
     tax = inc*s.flat;
   }
   if(s.local) tax += inc*s.local;
+  if(s.credit){                                            // taxpayer credit (e.g., Utah, Oregon), optional phaseout
+    let cr=s.credit[fi];
+    if(s.creditPhase) cr=Math.max(0, cr - s.creditPhase.rate*Math.max(0, annualTaxable - s.creditPhase.threshold[fi]));
+    tax=Math.max(0, tax-cr);
+  }
   return tax;
 }
 
@@ -432,9 +454,15 @@ $("yos").value=4;
 $("stateA").value="NC"; $("stateB").value="CA";
 
 // populate BAH duty-station dropdowns (sorted by area name)
-if(typeof MHA_NAMES!=="undefined"){
-  const opts=Object.entries(MHA_NAMES).sort((a,b)=>a[1].localeCompare(b[1]));
+if(typeof MHA_NAMES!=="undefined" && typeof BAH_W!=="undefined"){
+  const opts=Object.entries(MHA_NAMES).filter(([code])=>BAH_W[code]).sort((a,b)=>a[1].localeCompare(b[1]));
   ["stationA","stationB"].forEach(sid=>{const sel=$(sid);opts.forEach(([code,nm])=>{const o=document.createElement("option");o.value=code;o.textContent=nm;sel.appendChild(o);});});
+} else {
+  // bah-data.js missing or blocked — tell the user instead of showing an empty dropdown
+  ["stationA","stationB"].forEach(sid=>{
+    const sel=$(sid); if(sel.options&&sel.options.length) sel.options[0].textContent="BAH data unavailable — enter BAH manually";
+    sel.disabled=true;
+  });
 }
 function applyBah(stationId,bahId){const v=bahLookup($(stationId).value);if(v!=null)$(bahId).value=v;}
 $("stationA").addEventListener("change",()=>{applyBah("stationA","bahA");calculate();});
@@ -446,7 +474,7 @@ SPECIALS.forEach(([key,label,amt,tax])=>{
   const row=document.createElement("div");row.className="sp-row";
   row.innerHTML='<input type="checkbox" id="sp_'+key+'">'+
     '<label for="sp_'+key+'">'+label+(tax?"":' <em style="color:var(--good)">(non-taxable)</em>')+'</label>'+
-    '<input type="number" id="spamt_'+key+'" value="'+amt+'" min="0" step="1">';
+    '<input type="number" id="spamt_'+key+'" value="'+amt+'" min="0" step="1" aria-label="'+esc(label)+' monthly amount in dollars">';
   spWrap.appendChild(row);
 });
 
@@ -454,6 +482,7 @@ function stateNote(code){
   const s=STATES[code];
   if(s.none) return "No state income tax.";
   if(s.exemptDefault) return "Fully exempts active-duty military pay (box pre-checked).";
+  if(s.cond) return "Taxed if stationed in "+s.name+"; exempt if stationed elsewhere — check the box if you're stationed outside "+s.name+".";
   return "Taxes active-duty military pay (2026 brackets applied)"+(s.local?", incl. avg. local tax.":". Check the box only if you qualify for an exemption.");
 }
 function syncStateNote(sid,eid,nid){
@@ -484,7 +513,16 @@ function basicPay(grade,yosIdx){
   return cap?Math.min(v,cap):v;
 }
 // federal income tax on an annual taxable amount (standard deduction applied here)
+// clamp helper: coerce any field value to a safe non-negative number
+function num(id,min,max){
+  let v=parseFloat($(id).value);
+  if(!Number.isFinite(v)) v=0;
+  if(min!=null) v=Math.max(min,v);
+  if(max!=null) v=Math.min(max,v);
+  return v;
+}
 function fedTaxOnAnnual(annualTaxable, filing){
+  if(!BRACKETS[filing]) filing="single";           // guard against tampered/unknown filing status
   const inc=Math.max(0, annualTaxable - STD_DED[filing]);
   const br=BRACKETS[filing];let tax=0;
   for(let i=0;i<br.length;i++){
@@ -496,7 +534,9 @@ function fedTaxOnAnnual(annualTaxable, filing){
 }
 
 function calcScenario(bah, stateCode, stateExempt){
-  const grade=$("grade").value, yosIdx=+$("yos").value, filing=$("filing").value;
+  const grade=$("grade").value;
+  let yosIdx=Math.round(num("yos",0,YOS_LABELS.length-1));
+  let filing=$("filing").value; if(!BRACKETS[filing]) filing="single";
   const combat=$("combat").checked;
   const isOfficer = grade.startsWith("O") || grade.startsWith("W");
   const base=basicPay(grade,yosIdx);
@@ -505,14 +545,15 @@ function calcScenario(bah, stateCode, stateExempt){
   let spTaxable=0, spNontax=0, spList=[];
   SPECIALS.forEach(([key,label,,tax])=>{
     if($("sp_"+key).checked){
-      const amt=+$("spamt_"+key).value||0;
+      const amt=num("spamt_"+key,0);
       if(amt>0){ spList.push([label,amt]); tax?spTaxable+=amt:spNontax+=amt; }
     }
   });
 
+  bah = Math.max(0, Number.isFinite(bah)?bah:0);
   const gross = base + bah + bas + spTaxable + spNontax;
 
-  const tspPct=(+$("tsp").value||0)/100;
+  const tspPct=num("tsp",0,100)/100;
   const tspAmt=base*tspPct;
   const tspTrad = $("tsptype").value==="trad";
 
@@ -528,27 +569,26 @@ function calcScenario(bah, stateCode, stateExempt){
       : 0;
   }
   const memberAnnual = memberTaxMonthly*12;
-  const otherInc = Math.max(0, +$("otherinc").value||0);
 
-  // marginal federal tax: member income stacked on top of other household income
-  const fedTax = (fedTaxOnAnnual(memberAnnual+otherInc, filing) - fedTaxOnAnnual(otherInc, filing))/12;
+  // federal tax on the member's own taxable pay (2026 brackets + standard deduction)
+  const fedTax = fedTaxOnAnnual(memberAnnual, filing)/12;
 
   // FICA — applies even in a combat zone; incl. Additional Medicare Tax
   const ficaWageMonthly = base + spTaxable;
   const ss = Math.min(ficaWageMonthly, SS_WAGE_BASE/12) * SS_RATE;
   const annualWage = ficaWageMonthly*12;
-  const medi = ficaWageMonthly*MEDI_RATE + Math.max(0, annualWage-ADDL_MEDI_THRESHOLD)*ADDL_MEDI_RATE/12;
+  const addlMedThresh = (filing==="mfj")?250000:200000;
+  const medi = ficaWageMonthly*MEDI_RATE + Math.max(0, annualWage-addlMedThresh)*ADDL_MEDI_RATE/12;
 
   // state income tax — marginal, stacked, conforms to federal combat exclusion
   let stateTax=0;
   const st=STATES[stateCode];
   if(!stateExempt && !st.none){
-    stateTax = (stateTaxAnnual(stateCode, memberAnnual+otherInc, filing)
-              - stateTaxAnnual(stateCode, otherInc, filing))/12;
+    stateTax = stateTaxAnnual(stateCode, memberAnnual, filing, fedTax*12)/12;
   }
 
-  const sgli=+$("sgli").value||0;
-  const other=+$("other").value||0;
+  const sgli=num("sgli",0);
+  const other=num("other",0);
 
   const totalTax = fedTax + ss + medi + stateTax;
   const deductions = totalTax + tspAmt + sgli + other;
@@ -565,9 +605,10 @@ const money2=n=>"$"+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFra
 const pct=n=>(n*100).toFixed(1)+"%";
 
 function renderScenario(r,label,cls){
-  const stName=STATES[r.stateCode].name;
+  label=esc(label);
+  const stName=esc(STATES[r.stateCode].name);
   let sp="";
-  r.spList.forEach(([l,a])=>{sp+='<div class="line sub-line"><span>'+l+'</span><span class="v">'+money(a)+'</span></div>';});
+  r.spList.forEach(([l,a])=>{sp+='<div class="line sub-line"><span>'+esc(l)+'</span><span class="v">'+money(a)+'</span></div>';});
   return '<div class="res-card">'+
     '<div class="res-head '+cls+'"><div class="lbl">'+label+' — monthly take-home</div>'+
       '<div class="amt">'+money(r.takeHome)+'</div><div class="yr">'+money(r.takeHome*12)+' / year</div></div>'+
