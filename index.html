@@ -322,10 +322,12 @@ const BAH_COL={"E-1":0,"E-2":1,"E-3":2,"E-4":3,"E-5":4,"E-6":5,"E-7":6,"E-8":7,"
 function bahLookup(mha){
   if(!mha) return null;
   const dep=$("deps").value==="yes";
-  const src=dep?(typeof BAH_W!=="undefined"?BAH_W:null):(typeof BAH_WO!=="undefined"?BAH_WO:null);
-  if(!src||!src[mha]) return null;
-  const v=src[mha][BAH_COL[$("grade").value]];
-  return (v==null)?null:v;
+  const src=dep?(typeof BAH_W==="object"?BAH_W:null):(typeof BAH_WO==="object"?BAH_WO:null);
+  if(!src || !src[mha] || !Array.isArray(src[mha])) return null;
+  const col=BAH_COL[$("grade").value];
+  if(col==null) return null;
+  const v=src[mha][col];
+  return Number.isFinite(v) ? v : null;
 }
 
 const SPECIALS = [
@@ -473,9 +475,17 @@ $("yos").value=4;
 });
 $("stateA").value="NC"; $("stateB").value="CA";
 
-// populate BAH duty-station dropdowns (sorted by area name)
-if(typeof MHA_NAMES!=="undefined" && typeof BAH_W!=="undefined"){
-  const opts=Object.entries(MHA_NAMES).filter(([code])=>BAH_W[code]).sort((a,b)=>a[1].localeCompare(b[1]));
+// populate BAH duty-station dropdowns (sorted by area name).
+// Validate shape, not just existence: a truncated or corrupted bah-data.js can
+// leave these null/non-object, and typeof null === "object" would pass a naive guard.
+const BAH_OK = (typeof MHA_NAMES==="object" && MHA_NAMES!==null &&
+                typeof BAH_W==="object"     && BAH_W!==null     &&
+                typeof BAH_WO==="object"    && BAH_WO!==null    &&
+                Object.keys(BAH_W).length>0);
+if(BAH_OK){
+  const opts=Object.entries(MHA_NAMES)
+    .filter(([code,nm])=>BAH_W[code]&&Array.isArray(BAH_W[code])&&typeof nm==="string")
+    .sort((a,b)=>a[1].localeCompare(b[1]));
   ["stationA","stationB"].forEach(sid=>{const sel=$(sid);opts.forEach(([code,nm])=>{const o=document.createElement("option");o.value=code;o.textContent=nm;sel.appendChild(o);});});
 } else {
   // bah-data.js missing or blocked — tell the user instead of showing an empty dropdown
