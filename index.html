@@ -482,13 +482,14 @@ const BAH_OK = (typeof MHA_NAMES==="object" && MHA_NAMES!==null &&
                 typeof BAH_W==="object"     && BAH_W!==null     &&
                 typeof BAH_WO==="object"    && BAH_WO!==null    &&
                 Object.keys(BAH_W).length>0);
-if(BAH_OK){
-  const opts=Object.entries(MHA_NAMES)
-    .filter(([code,nm])=>BAH_W[code]&&Array.isArray(BAH_W[code])&&typeof nm==="string")
-    .sort((a,b)=>a[1].localeCompare(b[1]));
-  ["stationA","stationB"].forEach(sid=>{const sel=$(sid);opts.forEach(([code,nm])=>{const o=document.createElement("option");o.value=code;o.textContent=nm;sel.appendChild(o);});});
+const stationOpts = BAH_OK ? Object.entries(MHA_NAMES)
+      .filter(([code,nm])=>Array.isArray(BAH_W[code])&&typeof nm==="string")
+      .sort((a,b)=>a[1].localeCompare(b[1])) : [];
+if(stationOpts.length){
+  ["stationA","stationB"].forEach(sid=>{const sel=$(sid);stationOpts.forEach(([code,nm])=>{const o=document.createElement("option");o.value=code;o.textContent=nm;sel.appendChild(o);});});
 } else {
-  // bah-data.js missing or blocked — tell the user instead of showing an empty dropdown
+  // No usable rate data (file missing, blocked, or corrupt) — say so rather than
+  // leaving an empty dropdown the user will click at expecting something.
   ["stationA","stationB"].forEach(sid=>{
     const sel=$(sid); if(sel.options&&sel.options.length) sel.options[0].textContent="BAH data unavailable — enter BAH manually";
     sel.disabled=true;

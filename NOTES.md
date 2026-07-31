@@ -63,6 +63,19 @@ Both `index.html` and `bah-data.js` must be deployed together or BAH auto-fill b
 - Every static control has a `<label for>`; the 12 generated special-pay amount inputs carry `aria-label`.
 - Print stylesheet: hides action buttons, forces exact brand color, prevents cards from splitting across pages, and appends link URLs after anchors.
 
+## Running the tests
+
+```
+node test.js
+```
+
+No dependencies. 177 checks covering the golden case, 2026 constants, the pay
+table, BAH data integrity and lookup, FICA/combat-zone/TSP behaviour, all 51
+state jurisdictions, special pays, input hardening, a 1,071-combination sweep,
+XSS escaping, share-link round-trip, corrupted-data resilience, accessibility,
+and deployment metadata. Exit code 0 = pass. **Run it after any change to
+`index.html` or `bah-data.js`, and after the yearly rate update.**
+
 ## Verification
 
 The calculation logic has an automated test harness approach: load `bah-data.js` + the inline script into Node with a stubbed DOM, then assert invariants (pay caps, BAH lookup vs raw data for all areas, combat/TSP/FICA behavior, all-state validity, effective-rate bounds). Re-run after any data or logic change.
