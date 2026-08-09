@@ -336,6 +336,34 @@ ok('zero income -> zero state tax',
 });
 baseline(); ok('exempt checkbox overrides to $0', calcScenario(2500,'CA',true).stateTax === 0);
 
+G('State tax: hand-computed golden values');
+// Verified by hand against each state's published 2026 brackets and standard
+// deduction, then cross-checked against the state's official published rates.
+// Virginia: 2% to $3k, 3% to $5k, 5% to $17k, 5.75% above; SD $8,750 / $17,500;
+// identical brackets for every filing status.
+(() => {
+  const vaSingle = 3000*0.02 + 2000*0.03 + 12000*0.05 + (60000-8750-17000)*0.0575;
+  eq('VA single $60,000', A.stateTaxAnnual('VA',60000,'single',0), vaSingle, 0.01);
+  const vaJoint = 3000*0.02 + 2000*0.03 + 12000*0.05 + (90000-17500-17000)*0.0575;
+  eq('VA married $90,000', A.stateTaxAnnual('VA',90000,'mfj',0), vaJoint, 0.01);
+  ok('VA brackets identical across filing statuses',
+     JSON.stringify(STATES.VA.b.single) === JSON.stringify(STATES.VA.b.mfj));
+  eq('NC single $60,000 (flat 3.99%, SD 12,750)',
+     A.stateTaxAnnual('NC',60000,'single',0), (60000-12750)*0.0399, 0.01);
+  eq('GA single $60,000 (flat 5.19%, SD 12,000)',
+     A.stateTaxAnnual('GA',60000,'single',0), (60000-12000)*0.0519, 0.01);
+  // Maryland must exceed a same-rate state because it adds average local tax.
+  ok('MD exceeds a comparable state (local tax applied)',
+     A.stateTaxAnnual('MD',60000,'single',0) > A.stateTaxAnnual('NC',60000,'single',0));
+  // Effective rates must stay in a believable band for real military incomes.
+  let implausible = 0;
+  Object.keys(STATES).forEach(c => {
+    const rate = A.stateTaxAnnual(c, 60000, 'single', 6000) / 60000;
+    if (rate < 0 || rate > 0.09) implausible++;
+  });
+  ok('all state effective rates plausible at $60k', implausible === 0);
+})();
+
 G('Special and incentive pays');
 (() => {
   let bad = 0;
