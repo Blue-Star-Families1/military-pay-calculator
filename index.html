@@ -98,6 +98,9 @@
   .btn{background:var(--panel);border:1px solid var(--line);color:var(--navy);font-weight:600;font-size:13px;padding:9px 14px;border-radius:9px;cursor:pointer}
   .btn:hover{border-color:var(--sky)}
   .footnote{font-size:12px;color:var(--muted);margin-top:22px;line-height:1.6}
+  .feedback{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--steel);
+    border-radius:0 10px 10px 0;padding:12px 16px;font-size:13px;color:var(--ink);margin-top:4px}
+  .feedback a{font-weight:600;white-space:nowrap}
   @media(max-width:720px){.scenarios,.results{grid-template-columns:1fr}}
   @media print{
     .actions{display:none}
@@ -267,6 +270,12 @@
     <div class="disclaimer">
       <strong>Estimate only.</strong> Models 2026 base pay (incl. Executive Schedule caps), BAS, federal tax, FICA (with the Additional Medicare Tax), and state income tax using real 2026 brackets &amp; standard deductions, and combat-zone exclusion (enlisted &amp; warrant officers fully excluded; commissioned officers capped at max enlisted pay + IDP). BAH auto-fills from official 2026 DoD (DTMO) rates by duty station, grade, and dependents — override anytime. State tax credits, itemized deductions, and local taxes outside Maryland are not modeled. Verify with your finance office / MyPay before making financial decisions.
     </div>
+  </div>
+
+  <div class="feedback">
+    <strong>Spot a number that looks wrong?</strong>
+    Compare it against your LES and tell us where it differs — that's the most useful feedback we can get.
+    <a href="https://github.com/Blue-Star-Families1/military-pay-calculator/issues/new?title=Pay%20estimate%20looks%20wrong&body=Rank%2Fgrade%3A%20%0AYears%20of%20service%3A%20%0ADuty%20station%3A%20%0AState%20of%20legal%20residence%3A%20%0A%0AWhat%20the%20calculator%20showed%3A%20%0AWhat%20your%20LES%20shows%3A%20%0A%0A(Please%20do%20not%20include%20personal%20or%20identifying%20details.)" target="_blank" rel="noopener">Report an issue</a>
   </div>
 
   <div class="footnote" id="sources"></div>
