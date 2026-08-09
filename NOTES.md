@@ -86,8 +86,18 @@ Compensation Tables, January 1, 2026**.
 ## Running the tests
 
 ```
-node test.js
+node test.js          # 198 engine checks, no dependencies
+npm install jsdom     # one time
+node test-dom.js      # 39 DOM integration checks in a real DOM
 ```
+
+`test-dom.js` parses the real `index.html` in a real DOM, executes the real
+scripts, and drives the UI with dispatched events — catching anything a stubbed
+DOM could hide (options never created, listeners never wired, escaping that only
+looks safe as a string). It exits 2 and skips cleanly if jsdom isn't installed.
+
+**Not covered by either suite: visual layout.** jsdom has no renderer, so how the
+page *looks* — especially on a phone — still needs a human with a browser.
 
 No dependencies. 177 checks covering the golden case, 2026 constants, the pay
 table, BAH data integrity and lookup, FICA/combat-zone/TSP behaviour, all 51
