@@ -43,6 +43,26 @@ Both `index.html` and `bah-data.js` must be deployed together or BAH auto-fill b
 - **TSP:** Traditional reduces federal and state taxable income (not FICA); Roth does not reduce taxable income but is still deducted from take-home.
 - **State standard deductions** are applied to military income alone (accurate for a single-income household). Head-of-household uses single-filer figures as an approximation.
 
+## External validation (DoD/CRS benchmark)
+
+Checked against independent published figures: CRS *Defense Primer: Regular
+Military Compensation* (IF10532, Table 1), citing DOD **Selected Military
+Compensation Tables, January 1, 2026**.
+
+- **BAS matches exactly** — $5,723/yr enlisted, $3,942/yr officer.
+- **Basic pay** — every DoD grade average falls inside our table's range.
+  This benchmark is what surfaced the missing **E-1 under-4-months rate**
+  ($2,226 vs $2,407); it is now a separate selectable grade.
+- **BAH** — our unweighted mean across 338 areas differs from DoD's averages by
+  −1.6% (E-5) to −11.5% (O-6). Expected: DoD weights by troop population, which
+  concentrates in high-cost areas. Per-area values are verified exact against DTMO.
+- **Federal tax advantage** — ours runs ~12–16% below the DoD figure for most
+  grades. Expected and not a defect: the DoD number includes the **Earned Income
+  Tax Credit** and an averaged household composition, while this tool models the
+  individual's own filing status with no credits. (DoD's own figures are
+  non-monotonic — E-8 advantage sits below E-5 — which only makes sense with
+  varying dependent/credit assumptions.)
+
 ## Known limitations (intentional)
 
 - BAH covers CONUS, Alaska, and Hawaii only. OCONUS/overseas uses OHA (not modeled) — the manual BAH field covers those.

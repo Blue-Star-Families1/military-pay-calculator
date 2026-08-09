@@ -178,7 +178,16 @@ eq('W-5 below minimum YOS falls back', basicPay('W-5', 0), 10170, 0);
 eq('O-10 capped', basicPay('O-10', 10), 18808.20, 0);
 eq('O-6 capped at high YOS', basicPay('O-6', 17), 15258.30, 0);
 eq('O-6 uncapped at low YOS', basicPay('O-6', 0), 8751, 0);
-ok('27 pay grades', Object.keys(PAY).length === 27);
+(() => {
+  const expected = ['E-1 <4mo','E-1','E-2','E-3','E-4','E-5','E-6','E-7','E-8','E-9',
+    'W-1','W-2','W-3','W-4','W-5','O-1','O-2','O-3','O-4','O-5','O-6','O-7','O-8','O-9','O-10',
+    'O-1E','O-2E','O-3E'];
+  const have = Object.keys(PAY);
+  ok('every expected pay grade present', expected.every(g => have.includes(g)));
+  ok('no unexpected pay grades', have.every(g => expected.includes(g)));
+  ok('every pay grade has a BAH column', have.every(g => BAH_COL[g] != null));
+  ok('every pay grade is selectable', expected.every(g => A.YOS_LABELS && PAY[g]));
+})();
 ok('all rows have 18 YOS columns', Object.values(PAY).every(a => a.length === 18));
 ok('YOS labels match columns', YOS_LABELS.length === 18);
 (() => {
@@ -190,6 +199,37 @@ ok('YOS labels match columns', YOS_LABELS.length === 18);
   });
   ok('no zero/negative pay cells', zero === 0);
   ok('pay never decreases with service', backwards === 0);
+})();
+
+G('External benchmark: DoD "Selected Military Compensation Tables" via CRS IF10532 (Jan 1 2026)');
+// Independent published figures. Annual. Source: CRS Defense Primer: Regular
+// Military Compensation, Table 1, citing DOD Selected Military Compensation
+// Tables, January 1, 2026, "Detailed RMC Tables for All Personnel," p. B-3.
+(() => {
+  const CRS = {
+    'E-1': { basic: 27965, bas: 5723 }, 'E-5': { basic: 49965, bas: 5723 },
+    'E-8': { basic: 83807, bas: 5723 }, 'O-1': { basic: 51289, bas: 3942 },
+    'O-4': { basic: 118273, bas: 3942 }, 'O-6': { basic: 174534, bas: 3942 }
+  };
+  eq('enlisted BAS matches DoD annual figure', BAS_ENL * 12, 5723, 1);
+  eq('officer BAS matches DoD annual figure', BAS_OFF * 12, 3942, 1);
+  // DoD grade averages must sit inside the min..max of that grade's pay row.
+  // (E-1 average blends the under-4-months and over-4-months rates.)
+  Object.keys(CRS).forEach(g => {
+    const cells = PAY[g].filter(v => v != null);
+    const lo = Math.min(...cells), hi = Math.max(...cells);
+    const perMonth = CRS[g].basic / 12;
+    const inRange = g === 'E-1'
+      ? perMonth >= basicPay('E-1 <4mo', 0) - 1 && perMonth <= hi + 1
+      : perMonth >= lo - 1 && perMonth <= hi + 1;
+    ok('DoD ' + g + ' average pay is within our table range', inRange);
+  });
+  // The under-4-months E-1 rate is what makes the DoD E-1 average reachable.
+  eq('E-1 under 4 months rate', basicPay('E-1 <4mo', 0), 2226, 0);
+  ok('E-1 under 4 months is lower than standard E-1',
+     basicPay('E-1 <4mo', 0) < basicPay('E-1', 0));
+  ok('DoD E-1 average falls between the two E-1 rates',
+     27965 / 12 > basicPay('E-1 <4mo', 0) && 27965 / 12 < basicPay('E-1', 0));
 })();
 
 G('BAH data integrity and lookup');
