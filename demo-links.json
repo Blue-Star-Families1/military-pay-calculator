@@ -1,0 +1,26 @@
+[
+  {
+    "demo": 1,
+    "title": "E-5 with family — Fort Bragg → JBLM/Tacoma (Texas residence)",
+    "talking_point": "Same rank, same job — housing alone changes the paycheck.",
+    "url": "https://blue-star-families1.github.io/military-pay-calculator/?grade=E-5&yos=6&filing=mfj&deps=yes&tsp=5&tsptype=trad&sgli=31&other=0&stationA=NC182&bahA=1806&stateA=TX&exemptA=1&labelA=Fort+Bragg%2C+NC&compareOn=1&stationB=WA311&bahB=2556&stateB=TX&exemptB=1&labelB=JBLM+%2F+Tacoma%2C+WA"
+  },
+  {
+    "demo": 2,
+    "title": "O-3 with family — Fort Hood → San Diego (Virginia residence)",
+    "talking_point": "A high-cost coastal move: over $26k a year in additional take-home.",
+    "url": "https://blue-star-families1.github.io/military-pay-calculator/?grade=O-3&yos=4&filing=mfj&deps=yes&tsp=5&tsptype=trad&sgli=31&other=0&stationA=TX286&bahA=2340&stateA=VA&exemptA=0&labelA=Fort+Hood%2C+TX&compareOn=1&stationB=CA038&bahB=4518&stateB=VA&exemptB=0&labelB=San+Diego%2C+CA"
+  },
+  {
+    "demo": 3,
+    "title": "E-4 single — Norfolk → Colorado Springs (Florida residence)",
+    "talking_point": "Nearly flat. Not every PCS changes the budget — that is worth knowing too.",
+    "url": "https://blue-star-families1.github.io/military-pay-calculator/?grade=E-4&yos=2&filing=single&deps=no&tsp=5&tsptype=trad&sgli=31&other=0&stationA=VA298&bahA=1707&stateA=FL&exemptA=1&labelA=Norfolk%2C+VA&compareOn=1&stationB=CO046&bahB=1689&stateB=FL&exemptB=1&labelB=Colorado+Springs%2C+CO"
+  },
+  {
+    "demo": 4,
+    "title": "E-7 deployed to a combat zone — Fort Hood (Georgia residence)",
+    "talking_point": "Combat-zone exclusion zeroes federal tax, but FICA is still withheld.",
+    "url": "https://blue-star-families1.github.io/military-pay-calculator/?grade=E-7&yos=8&filing=mfj&deps=yes&tsp=5&tsptype=trad&sgli=31&other=0&stationA=TX286&bahA=2070&stateA=GA&exemptA=0&labelA=Fort+Hood%2C+TX+%28deployed%29&compareOn=0&combat=1&sp_hfp=1&spamt_hfp=225&sp_fsa=1&spamt_fsa=250&sp_hardship=1&spamt_hardship=150"
+  }
+]
