@@ -44,6 +44,8 @@ Open `index.html` in any browser (with `bah-data.js` in the same folder), or vis
 
 ## Disclaimer
 
+**Scope.** Built for active-duty pay, including National Guard and Reserve members mobilized on Title 10 orders (30+ days), who are paid on the same tables with the same allowances. It is **not** built for weekend drill (IDT) or annual training pay — those are earned per drill period rather than monthly, use a different housing allowance (BAH-RC/T), and several states tax Guard pay differently from active-duty pay.
+
 **Estimate only.** Federal income tax is estimated as annual liability ÷ 12, not exact W-4 withholding. Taxes are computed on the service member's own pay; spouse/household income is not modeled. State tax credits, itemized deductions, per-child credits, and local taxes outside Maryland are not modeled. OCONUS locations use OHA rather than BAH and are not in the station list (enter BAH manually). Verify with your finance office / MyPay before making financial decisions. Not affiliated with, or endorsed by, the U.S. Department of Defense or DFAS.
 
 ## License
