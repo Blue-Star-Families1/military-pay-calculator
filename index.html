@@ -918,13 +918,32 @@ const FEEDBACK_IS_LINK_ONLY = !FEEDBACK_ENDPOINT && /^https:\/\//i.test(String(F
 if(FEEDBACK_IS_LINK_ONLY){
   const t=$("feedbackToggle");
   if(t){
-    // the button is a plain link now, not a disclosure control
-    if(typeof t.removeAttribute==="function"){
-      t.removeAttribute("aria-controls");
-      t.removeAttribute("aria-expanded");
-    }
-    if(typeof t.addEventListener==="function"){
-      t.addEventListener("click",()=>{ window.open(FEEDBACK_FORM_URL.trim(),"_blank","noopener"); });
+    const url=FEEDBACK_FORM_URL.trim();
+    // Swap the button for a real anchor. window.open() is silently refused by
+    // popup blockers, which would leave the button doing nothing; a link is
+    // never blocked, and supports middle-click and "open in new tab".
+    let a=null;
+    try{ a=document.createElement("a"); }catch(e){}
+    if(a && typeof t.replaceWith==="function" && typeof a.setAttribute==="function"){
+      a.setAttribute("id","feedbackToggle");
+      a.setAttribute("class",(t.className||"feedback-toggle"));
+      a.setAttribute("href",url);
+      a.setAttribute("target","_blank");
+      a.setAttribute("rel","noopener");
+      a.textContent=t.textContent||"Share your feedback";
+      t.replaceWith(a);
+    } else {
+      // minimal DOM (or no replaceWith): fall back to navigation on click
+      if(typeof t.removeAttribute==="function"){
+        t.removeAttribute("aria-controls");
+        t.removeAttribute("aria-expanded");
+      }
+      if(typeof t.addEventListener==="function"){
+        t.addEventListener("click",()=>{
+          const w=window.open(url,"_blank","noopener");
+          if(!w) location.href=url;              // popup blocked — go anyway
+        });
+      }
     }
   }
   const f=$("feedbackForm"); if(f && f.style) f.style.display="none";

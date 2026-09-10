@@ -116,14 +116,14 @@ setTimeout(() => {
     ok('form URL is https', /^https:\/\//i.test(FORM_URL));
     // Fields that cannot submit must not be shown as though they could.
     ok('in-page fields are hidden', $('feedbackForm').style.display === 'none');
-    ok('toggle drops its disclosure semantics', !$('feedbackToggle').hasAttribute('aria-expanded'));
-    ok('toggle no longer claims to control the form', !$('feedbackToggle').hasAttribute('aria-controls'));
-    let opened = null;
-    const realOpen = w.open;
-    w.open = (u) => { opened = u; return null; };
-    $('feedbackToggle').click();
-    w.open = realOpen;
-    eq('clicking the button opens the form', opened, FORM_URL);
+    // Must be a real link: window.open() is silently refused by popup blockers,
+    // which would leave the button doing nothing at all.
+    const t = $('feedbackToggle');
+    eq('the control is an anchor, not a popup button', t.tagName, 'A');
+    eq('it points at the configured form', t.getAttribute('href'), FORM_URL);
+    ok('it opens in a new tab safely', t.target === '_blank' && /noopener/.test(t.rel));
+    ok('it keeps the button styling', /feedback-toggle/.test(t.className));
+    ok('it drops the disclosure semantics', !t.hasAttribute('aria-expanded') && !t.hasAttribute('aria-controls'));
   } else {
     ok('feedback form hidden by default', $('feedbackForm').classList.contains('hidden'));
     $('feedbackToggle').click();
