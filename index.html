@@ -814,9 +814,19 @@ function calculate(){
 document.querySelectorAll("input,select").forEach(el=>el.addEventListener("input",calculate));
 
 // ---- shareable link + print ----
+// Only calculator inputs belong in a shared link. The feedback fields must be
+// excluded in BOTH directions: writing them would put a person's name and email
+// into a URL they hand to someone else, and reading them back would let a
+// crafted link pre-fill somebody else's details into the form.
+function isShareableField(el){
+  if(!el || !el.id) return false;
+  if(typeof el.closest==="function" && el.closest(".feedback")) return false;
+  return !/^feedback/i.test(el.id);
+}
 function collectState(){
   const p=new URLSearchParams();
   document.querySelectorAll("input[id],select[id]").forEach(el=>{
+    if(!isShareableField(el)) return;
     p.set(el.id, el.type==="checkbox"?(el.checked?"1":"0"):el.value);
   });
   return p.toString();
@@ -825,6 +835,7 @@ function applyState(){
   const p=new URLSearchParams(location.search);
   if(![...p.keys()].length) return;
   document.querySelectorAll("input[id],select[id]").forEach(el=>{
+    if(!isShareableField(el)) return;
     if(p.has(el.id)){ if(el.type==="checkbox") el.checked=p.get(el.id)==="1"; else el.value=p.get(el.id); }
   });
   $("stateNoteA").textContent=stateNote($("stateA").value);

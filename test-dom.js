@@ -228,6 +228,25 @@ setTimeout(() => {
   eq('two cards when comparison is on', cards().length, 2);
   ok('compare mode drops the class', !$('results').classList.contains('single'));
 
+  G('Shared links must not carry feedback details');
+  (() => {
+    // A share link is handed to other people. Personal details typed into the
+    // feedback form must never ride along, and a crafted link must not be able
+    // to pre-fill someone else's name and email into that form.
+    const nm = $('feedbackName'), em = $('feedbackEmail');
+    nm.value = 'Jane Doe'; em.value = 'jane@example.mil';
+    $('feedbackAccuracy').value = 'private note';
+    const qs = w.collectState ? w.collectState() : null;
+    ok('collectState is reachable for testing', typeof qs === 'string');
+    if (typeof qs === 'string') {
+      ok('name is not in the share link', !/Jane\+?%?2?0?Doe|Jane/i.test(qs));
+      ok('email is not in the share link', !/jane%40example|jane@example/i.test(qs));
+      ok('no feedback fields at all in the share link', !/[?&]?feedback/i.test(qs));
+      ok('calculator fields are still in the share link', /grade=/.test(qs) && /stateA=/.test(qs));
+    }
+    nm.value = ''; em.value = ''; $('feedbackAccuracy').value = '';
+  })();
+
   G('Mobile layout');
   // An inline grid-template-columns would outrank the max-width:720px media
   // query, so the two cards could never stack and the numbers got squeezed
@@ -265,7 +284,19 @@ setTimeout(() => {
       eq('BAH restored', g2('bahA').value, String(data.BAH_W[SD][COL['O-3']]));
       eq('label restored', g2('labelA').value, 'San Diego');
       ok('results rendered from the link', g2('results').innerHTML.length > 300);
-      report();
+
+      // A crafted link must not be able to seed the feedback form with
+      // someone else's identity.
+      const hostile = '?grade=E-5&feedbackName=Attacker&feedbackEmail=evil%40example.com';
+      const d3 = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true,
+        url: URL_ + hostile, virtualConsole: vc });
+      setTimeout(() => {
+        const g3 = id => d3.window.document.getElementById(id);
+        eq('crafted link cannot prefill the name', g3('feedbackName').value, '');
+        eq('crafted link cannot prefill the email', g3('feedbackEmail').value, '');
+        eq('normal calculator params still restore', g3('grade').value, 'E-5');
+        report();
+      }, 250);
     }, 250);
   })();
 }, 400);
