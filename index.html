@@ -76,6 +76,8 @@
   .sp-row label{margin:0;text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink);font-size:13px}
   .toggle-row{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px}
   .toggle-row input{width:auto;flex:none}
+  /* width:auto above would otherwise squash the box back to ~13px wide */
+  .toggle-row input[type=checkbox]{width:18px;height:18px}
   .toggle-row label{margin:0;text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink)}
   .res-card{border:1px solid var(--line);border-radius:12px;overflow:hidden}
   .res-head{padding:14px 16px;color:#fff} .res-head.a{background:var(--steel)} .res-head.b{background:var(--gold);color:#fff}
