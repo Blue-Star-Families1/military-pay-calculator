@@ -410,6 +410,8 @@ const GRADE_ORDER = ["E-1 <4mo","E-1","E-2","E-3","E-4","E-5","E-6","E-7","E-8",
   "W-1","W-2","W-3","W-4","W-5",
   "O-1","O-1E","O-2","O-2E","O-3","O-3E","O-4","O-5","O-6","O-7","O-8","O-9","O-10"];
 const BAS_ENL = 476.95, BAS_OFF = 328.48;
+// sanity ceiling for the manual BAH field - real rates top out near $8,208
+const BAH_MAX = 50000;
 // 2026 Executive Schedule basic-pay caps: Level II (O-7..O-10), Level V (O-6 & below)
 const PAY_CAP = {"O-7":18808.20,"O-8":18808.20,"O-9":18808.20,"O-10":18808.20,"O-6":15258.30};
 // Combat-zone (CZTE) monthly exclusion cap for commissioned officers = max enlisted basic pay + IDP
@@ -737,8 +739,10 @@ function calcScenario(bah, stateCode, stateExempt){
     takeHome,totalTax,effRate,keepPct,stateCode,combat};
 }
 
-const money=n=>"$"+Math.round(n).toLocaleString("en-US");
-const money2=n=>"$"+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+// Negative amounts render as −$1,234, not $-1,234. Take-home can legitimately
+// go negative when entered deductions exceed pay.
+const money=n=>{const v=Math.round(n);return (v<0?"−$":"$")+Math.abs(v).toLocaleString("en-US");};
+const money2=n=>(n<0?"−$":"$")+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const pct=n=>(n*100).toFixed(1)+"%";
 
 function renderScenario(r,label,cls){
@@ -789,10 +793,10 @@ function announce(rA,rB){
 
 function calculate(){
   const compare=$("compareOn").checked;
-  const rA=calcScenario(num("bahA",0),$("stateA").value,$("exemptA").checked);
+  const rA=calcScenario(num("bahA",0,BAH_MAX),$("stateA").value,$("exemptA").checked);
   let html=renderScenario(rA,$("labelA").value||"Scenario A","a");
   if(compare){
-    const rB=calcScenario(num("bahB",0),$("stateB").value,$("exemptB").checked);
+    const rB=calcScenario(num("bahB",0,BAH_MAX),$("stateB").value,$("exemptB").checked);
     html+=renderScenario(rB,$("labelB").value||"Scenario B","b");
     if($("results").classList) $("results").classList.toggle("single",false);
     $("results").innerHTML=html;
@@ -892,7 +896,7 @@ function syncFeedbackDefaults(){
   stateEl.value = $("stateA").value;
   const calcEl=$("feedbackCalculatorEstimate");
   const lesEl=$("feedbackLesEstimate");
-  if(calcEl) calcEl.value = Math.round(Math.max(0, calcScenario(num("bahA",0), $("stateA").value, $("exemptA").checked).takeHome));
+  if(calcEl) calcEl.value = Math.round(Math.max(0, calcScenario(num("bahA",0,BAH_MAX), $("stateA").value, $("exemptA").checked).takeHome));
   if(lesEl) lesEl.value = "";
 }
 function showFeedbackStatus(message,type){

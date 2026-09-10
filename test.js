@@ -91,7 +91,7 @@ function boot(opts) {
   // Data globals may not exist at all when testing a missing/blank data file,
   // so export them defensively.
   const exports_ = '\n;return {calculate,calcScenario,basicPay,bahLookup,num,esc,' +
-    'collectState,applyState,stateNote,stateTaxAnnual,fedTaxOnAnnual,money,' +
+    'collectState,applyState,stateNote,stateTaxAnnual,fedTaxOnAnnual,money,money2,BAH_MAX,' +
     'STATES,SPECIALS,PAY,BRACKETS,STD_DED,BAH_COL,' +
     'PAY_CAP,CZTE_CAP,BAS_ENL,BAS_OFF,SS_WAGE_BASE,YOS_LABELS,' +
     'BAH_W:(typeof BAH_W!=="undefined"?BAH_W:null),' +
@@ -362,6 +362,22 @@ G('State tax: hand-computed golden values');
     if (rate < 0 || rate > 0.09) implausible++;
   });
   ok('all state effective rates plausible at $60k', implausible === 0);
+})();
+
+G('Currency formatting and BAH ceiling');
+(() => {
+  // Take-home can legitimately go negative when deductions exceed pay; it must
+  // read as −$1,234 rather than the malformed $-1,234.
+  // note: this suite's eq() compares numbers with a tolerance, so string
+  // assertions have to go through ok()
+  ok('negative amounts use a leading minus', A.money(-1234) === '−$1,234');
+  ok('positive amounts are unchanged', A.money(1234) === '$1,234');
+  ok('zero has no sign', A.money(0) === '$0');
+  ok('cents formatter signs negatives too', /^−\$/.test(A.money2(-31)));
+  // A mistyped BAH must not produce a billion-dollar paycheck.
+  ok('BAH ceiling is defined and generous', A.BAH_MAX >= 20000);
+  const highest = Math.max(...Object.keys(BAH_W).map(m => Math.max(...BAH_W[m])));
+  ok('ceiling sits well above the highest published rate', A.BAH_MAX > highest * 2);
 })();
 
 G('Special and incentive pays');
