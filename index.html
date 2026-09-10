@@ -57,6 +57,11 @@
     border-radius:9px;font-size:15px;background:var(--panel);color:var(--ink)}
   select:focus,input:focus{outline:2px solid var(--sky);border-color:var(--sky)}
   .hint{font-size:11px;color:var(--muted);margin-top:4px;font-weight:400;text-transform:none;letter-spacing:0}
+  /* Default checkboxes render ~13px, well under the 24px minimum touch target,
+     and most people open this on a phone. Enlarge the box and give the paired
+     label a comfortable hit area. */
+  input[type=checkbox]{width:18px;height:18px;accent-color:var(--steel);cursor:pointer;flex:none}
+  .toggle-row label,.sp-row label{cursor:pointer;min-height:24px;display:flex;align-items:center}
   .scenarios,.results{display:grid;grid-template-columns:1fr 1fr;gap:18px}
   /* single-scenario mode: a class, never an inline style — an inline style
      would outrank the mobile media query below and never let cards stack */

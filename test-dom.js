@@ -247,6 +247,21 @@ setTimeout(() => {
     nm.value = ''; em.value = ''; $('feedbackAccuracy').value = '';
   })();
 
+  G('Touch targets');
+  (() => {
+    // Browser default checkboxes are ~13px, under the 24px minimum, and this
+    // tool is mostly opened on a phone. Assert the CSS that fixes it is present,
+    // since jsdom does not lay out and cannot measure the rendered size.
+    ok('checkboxes are explicitly sized', /input\[type=checkbox\][^}]*width:\s*18px/.test(html));
+    ok('checkbox labels get a 24px hit area', /\.sp-row label[^}]*min-height:\s*24px/.test(html.replace(/\s*,\s*/g, ',')));
+    ok('checkbox labels show a pointer cursor', /label[^}]*cursor:\s*pointer/.test(html));
+    // Every checkbox must be reachable by clicking its label, not just the box.
+    const boxes = [...d.querySelectorAll('input[type=checkbox][id]')];
+    const unpaired = boxes.filter(b => !d.querySelector('label[for="' + b.id + '"]'));
+    ok('every checkbox has a clickable label (' + (boxes.length - unpaired.length) + '/' + boxes.length + ')',
+       unpaired.length === 0);
+  })();
+
   G('Mobile layout');
   // An inline grid-template-columns would outrank the max-width:720px media
   // query, so the two cards could never stack and the numbers got squeezed
