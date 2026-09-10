@@ -58,6 +58,9 @@
   select:focus,input:focus{outline:2px solid var(--sky);border-color:var(--sky)}
   .hint{font-size:11px;color:var(--muted);margin-top:4px;font-weight:400;text-transform:none;letter-spacing:0}
   .scenarios,.results{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  /* single-scenario mode: a class, never an inline style — an inline style
+     would outrank the mobile media query below and never let cards stack */
+  .results.single{grid-template-columns:1fr}
   .scn{border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--panel)}
   .scn.a{border-top:4px solid var(--steel)} .scn.b{border-top:4px solid var(--gold)}
   .scn h3{margin:0 0 12px;font-size:15px;display:flex;align-items:center;gap:8px}
@@ -791,7 +794,7 @@ function calculate(){
   if(compare){
     const rB=calcScenario(num("bahB",0),$("stateB").value,$("exemptB").checked);
     html+=renderScenario(rB,$("labelB").value||"Scenario B","b");
-    $("results").style.gridTemplateColumns="1fr 1fr";
+    if($("results").classList) $("results").classList.toggle("single",false);
     $("results").innerHTML=html;
     const d=rB.takeHome-rA.takeHome;
     const up=d>=0;
@@ -801,7 +804,7 @@ function calculate(){
       '<div class="annual">'+(up?'+':'−')+money(Math.abs(d)*12)+' per year</div>';
     announce(rA,rB);
   } else {
-    $("results").style.gridTemplateColumns="1fr";
+    if($("results").classList) $("results").classList.toggle("single",true);
     $("results").innerHTML=html;
     $("diffBox").style.display="none";
     announce(rA,null);

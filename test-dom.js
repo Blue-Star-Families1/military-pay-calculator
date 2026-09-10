@@ -223,8 +223,21 @@ setTimeout(() => {
   G('Single-scenario mode');
   $('compareOn').checked = false; fire($('compareOn'), 'change');
   eq('one card when comparison is off', cards().length, 1);
+  ok('single mode uses a class', $('results').classList.contains('single'));
   $('compareOn').checked = true; fire($('compareOn'), 'change');
   eq('two cards when comparison is on', cards().length, 2);
+  ok('compare mode drops the class', !$('results').classList.contains('single'));
+
+  G('Mobile layout');
+  // An inline grid-template-columns would outrank the max-width:720px media
+  // query, so the two cards could never stack and the numbers got squeezed
+  // and clipped on a phone. The column count must come from CSS only.
+  ok('results grid is not set by an inline style',
+     !/grid-template-columns/i.test($('results').getAttribute('style') || ''));
+  ok('scenarios grid is not set by an inline style',
+     !/grid-template-columns/i.test(d.querySelector('.scenarios').getAttribute('style') || ''));
+  ok('a mobile breakpoint exists for the results grid',
+     /@media\s*\(max-width:\s*720px\)[^}]*\.results/.test(html.replace(/\s*,\s*/g, ',')));
 
   G('Accessibility in a real document');
   ok('page declares a language', d.documentElement.getAttribute('lang') === 'en');
