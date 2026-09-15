@@ -518,7 +518,9 @@ G('Accessibility');
 })();
 (() => {
   const head = html.slice(0, html.indexOf('<script src'));
-  const inputs = [...head.matchAll(/<(?:input|select)[^>]*id="([^"]+)"/g)].map(m => m[1]);
+  // hidden inputs carry state, not user-facing controls, so they need no label
+  const inputs = [...head.matchAll(/<(?:input|select)[^>]*id="([^"]+)"[^>]*>/g)]
+    .filter(m => !/type="hidden"/.test(m[0])).map(m => m[1]);
   const labels = new Set([...head.matchAll(/for="([^"]+)"/g)].map(m => m[1]));
   ok('every static control has a label', inputs.every(i => labels.has(i)));
   ok('generated amount inputs have aria-label', /aria-label="'\+esc\(label\)/.test(html));

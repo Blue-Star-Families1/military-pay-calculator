@@ -317,6 +317,23 @@ setTimeout(() => {
     ok('cost-group areas are still reachable by ZIP (' + reachable.length + '/' + ccgCodes.length + ')',
        reachable.length === ccgCodes.length);
 
+    // A ZIP-based share link must reopen on the ZIP tab. Otherwise a cost-group
+    // area — which has no dropdown entry — reopens with a blank station, and
+    // changing grade afterwards leaves the old rate in place.
+    (() => {
+      $('byZipA').click();
+      eq('mode is recorded for sharing', $('modeA').value, 'zip');
+      const q = w.collectState();
+      ok('share link carries the lookup mode', /modeA=zip/.test(q));
+      const d4 = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true,
+        url: URL_ + '?modeA=zip&zipA=92134&grade=E-5&deps=yes', virtualConsole: vc });
+      // jsdom runs scripts synchronously enough for the init block to have run
+      const g4 = id => d4.window.document.getElementById(id);
+      ok('a ZIP link reopens on the ZIP tab', g4('zipWrapA').hidden === false);
+      ok('and hides the station picker', g4('stationWrapA').hidden === true);
+      ok('and re-resolves the rate', Number(g4('bahA').value) > 0);
+    })();
+
     $('byStationA').click();
     $('zipA').value = '';
   })();
@@ -351,7 +368,9 @@ setTimeout(() => {
   ok('page declares a language', d.documentElement.getAttribute('lang') === 'en');
   ok('single top-level heading', d.querySelectorAll('h1').length === 1);
   ok('polite live region present', $('srStatus').getAttribute('aria-live') === 'polite');
-  const controls = [...d.querySelectorAll('main input, main select')];
+  // hidden inputs carry state, not user-facing controls, so they need no label
+  const controls = [...d.querySelectorAll('main input, main select')]
+    .filter(el => el.type !== 'hidden');
   const labelled = controls.filter(el =>
     (el.id && d.querySelector('label[for="' + el.id + '"]')) || el.getAttribute('aria-label'));
   ok('every control has a label (' + labelled.length + '/' + controls.length + ')',

@@ -259,6 +259,7 @@
             <label for="stationA">Duty station (BAH area)</label>
             <select id="stationA"><option value="">— choose to auto-fill BAH —</option></select>
           </div>
+          <input type="hidden" id="modeA" value="station">
           <div id="zipWrapA" hidden>
             <label for="zipA">ZIP code</label>
             <input type="text" id="zipA" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="e.g., 92134">
@@ -296,6 +297,7 @@
             <label for="stationB">Duty station (BAH area)</label>
             <select id="stationB"><option value="">— choose to auto-fill BAH —</option></select>
           </div>
+          <input type="hidden" id="modeB" value="station">
           <div id="zipWrapB" hidden>
             <label for="zipB">ZIP code</label>
             <input type="text" id="zipB" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="e.g., 28307">
@@ -714,20 +716,30 @@ if(ZIP_OK){
     const zi=$("zip"+scn);
     if(zi) zi.addEventListener("input",()=>{applyZip(scn);calculate();});
   });
+  function setLookupMode(scn,mode,focus){
+    const zipMode=mode==="zip";
+    $("stationWrap"+scn).hidden=zipMode;
+    $("zipWrap"+scn).hidden=!zipMode;
+    if($("mode"+scn)) $("mode"+scn).value=zipMode?"zip":"station";
+    document.querySelectorAll('.lookup-switch .lk[data-scn="'+scn+'"]').forEach(b=>{
+      const on=b.getAttribute("data-mode")===(zipMode?"zip":"station");
+      b.classList.toggle("on",on);
+      b.setAttribute("aria-pressed",String(on));
+    });
+    if(zipMode&&focus) $("zip"+scn).focus();
+  }
   document.querySelectorAll(".lookup-switch .lk").forEach(btn=>{
     btn.addEventListener("click",()=>{
-      const scn=btn.getAttribute("data-scn"), mode=btn.getAttribute("data-mode");
-      const zipMode=mode==="zip";
-      $("stationWrap"+scn).hidden=zipMode;
-      $("zipWrap"+scn).hidden=!zipMode;
-      document.querySelectorAll('.lookup-switch .lk[data-scn="'+scn+'"]').forEach(b=>{
-        const on=b===btn;
-        b.classList.toggle("on",on);
-        b.setAttribute("aria-pressed",String(on));
-      });
-      if(zipMode) $("zip"+scn).focus();
+      setLookupMode(btn.getAttribute("data-scn"),btn.getAttribute("data-mode"),true);
     });
   });
+  // Exposed so it can run after applyState() has read the URL — see below.
+  window.__restoreLookupModes=function(){
+    ["A","B"].forEach(scn=>{
+      const m=$("mode"+scn);
+      if(m && m.value==="zip"){ setLookupMode(scn,"zip",false); if($("zip"+scn).value) applyZip(scn); }
+    });
+  };
 } else {
   // No ZIP table shipped: hide the switch rather than offer a control that
   // cannot work, and leave the duty-station dropdown as the only path.
@@ -1166,6 +1178,8 @@ else if($("feedbackToggle") && $("feedbackForm")){
   });
 }
 applyState();
+// after applyState, so a shared ZIP link reopens on the ZIP tab
+if(typeof window.__restoreLookupModes==="function") window.__restoreLookupModes();
 calculate();
 if($("feedbackToggle") && $("feedbackForm")) syncFeedbackDefaults();
 </script>
