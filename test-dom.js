@@ -297,6 +297,13 @@ setTimeout(() => {
     ok('a short ZIP is rejected', /5-digit/i.test($('zipNoteA').textContent));
     $('zipA').value = '00000'; fire($('zipA'), 'input');
     ok('an unassigned ZIP is reported', /No BAH area|outside the published/i.test($('zipNoteA').textContent));
+    // A stale rate from the previous ZIP must not survive a failed lookup —
+    // it would look plausible and silently price the wrong location.
+    $('zipA').value = '92134'; fire($('zipA'), 'input');
+    ok('valid ZIP sets a rate', Number($('bahA').value) > 0);
+    $('zipA').value = '00601'; fire($('zipA'), 'input');   // Puerto Rico: OHA, not BAH
+    eq('a failed lookup clears the stale rate', $('bahA').value, '0');
+    ok('and explains why', /OHA|outside the published/i.test($('zipNoteA').textContent));
 
     // Cost-group areas are unreachable by name but must resolve by ZIP.
     const ccgCodes = Object.keys(data.MHA_NAMES)

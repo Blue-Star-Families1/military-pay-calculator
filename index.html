@@ -687,15 +687,19 @@ function applyZip(scn){
   const raw=String($("zip"+scn).value||"").trim();
   const note=$("zipNote"+scn);
   const setNote=(txt,cls)=>{ note.textContent=txt; note.className="hint"+(cls?" "+cls:""); };
+  // A failed lookup must not leave the previous location's rate sitting in the
+  // field: it looks plausible and would silently price the wrong place.
+  const clearRate=()=>{ $("bah"+scn).value="0"; };
   if(!raw){ setNote("Use the ZIP where you are living — helpful if your home of record is away from your duty station."); return; }
-  if(!/^\d{5}$/.test(raw)){ setNote("Enter a 5-digit ZIP code.","zip-bad"); return; }
+  if(!/^\d{5}$/.test(raw)){ setNote("Enter a 5-digit ZIP code.","zip-bad"); clearRate(); return; }
   const mha=zipToMha(raw);
-  if(!mha){ setNote("No BAH area found for that ZIP. Check the digits, or enter the amount below manually.","zip-bad"); return; }
+  if(!mha){ setNote("No BAH area found for that ZIP. Check the digits, or enter the amount below manually.","zip-bad"); clearRate(); return; }
   const name=(typeof MHA_NAMES==="object"&&MHA_NAMES)?MHA_NAMES[mha]:null;
   const v=bahLookup(mha);
   if(v==null){
     // e.g. the XX499 placeholder, and overseas ZIPs that use OHA rather than BAH
     setNote("That ZIP is outside the published BAH tables (overseas locations use OHA). Enter the amount below manually.","zip-bad");
+    clearRate();
     return;
   }
   $("bah"+scn).value=v;
