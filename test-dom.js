@@ -139,6 +139,10 @@ setTimeout(() => {
     eq('it points at the configured form', t.getAttribute('href'), FORM_URL);
     ok('it opens in a new tab safely', t.target === '_blank' && /noopener/.test(t.rel));
     ok('it keeps the button styling', /feedback-toggle/.test(t.className));
+    // As an <a> it inherits link defaults; it must still read as a button.
+    ok('link underline is cleared for the button',
+       /a\.feedback-toggle[^}]*text-decoration:\s*none/.test(html.replace(/\s*,\s*/g, ',')) ||
+       /\.feedback-toggle\{[^}]*text-decoration:\s*none/.test(html));
     ok('it drops the disclosure semantics', !t.hasAttribute('aria-expanded') && !t.hasAttribute('aria-controls'));
   } else {
     ok('feedback form hidden by default', $('feedbackForm').classList.contains('hidden'));
