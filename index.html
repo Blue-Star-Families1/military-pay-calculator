@@ -68,6 +68,16 @@
   .lookup-switch .lk+.lk{border-left:1px solid var(--line)}
   .lookup-switch .lk.on{background:var(--navy);color:#fff}
   .lookup-switch .lk:focus-visible{outline:2px solid var(--sky);outline-offset:-2px}
+  .fb-ctx{margin-top:10px;padding:10px 12px;background:var(--panel);border:1px solid var(--line);
+    border-radius:9px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .fb-ctx-lab{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;
+    font-weight:700;flex-basis:100%}
+  .fb-ctx code{font-size:12.5px;color:var(--ink);font-family:Consolas,Menlo,monospace;flex:1;
+    word-break:break-word;min-width:0}
+  .fb-ctx-copy{appearance:none;border:1px solid var(--line);background:#fff;color:var(--navy);
+    font:inherit;font-size:12px;font-weight:700;padding:6px 12px;border-radius:7px;cursor:pointer;
+    min-height:32px;flex:none}
+  .fb-ctx-copy:hover{border-color:var(--steel);color:var(--steel)}
   .zip-ok{color:var(--good);font-weight:600}
   .zip-bad{color:var(--bad);font-weight:600}
   .scenarios,.results{display:grid;grid-template-columns:1fr 1fr;gap:18px}
@@ -342,6 +352,11 @@
     <div class="feedback-header">
       <strong>Help us make this accurate — how did it compare with your LES?</strong>
       <button id="feedbackToggle" class="feedback-toggle" type="button" aria-expanded="false" aria-controls="feedbackForm">Share your feedback</button>
+    </div>
+    <div class="fb-ctx" id="fbCtx" hidden>
+      <div class="fb-ctx-lab">Copy this into your answer so we can reproduce it:</div>
+      <code id="fbCtxText"></code>
+      <button type="button" class="fb-ctx-copy" id="fbCtxCopy">Copy</button>
     </div>
     <form id="feedbackForm" class="feedback-form hidden" novalidate>
       <p class="feedback-privacy" id="feedbackPrivacy">We ask for your name and email only so we can follow up on what you report. They are never shown publicly or shared outside Blue Star Families. Please do not include account numbers, SSN, or other sensitive details.</p>
@@ -1177,10 +1192,59 @@ else if($("feedbackToggle") && $("feedbackForm")){
     }
   });
 }
+/* ---------------------------------------------------------------------------
+   Feedback context line
+
+   The in-page form auto-fills grade, years, station and state — but when
+   feedback goes to an external form those values have nowhere to travel, so a
+   report arrives without the inputs that produced it. Show the summary and let
+   people paste it in. Only appears when feedback actually leaves the page.
+--------------------------------------------------------------------------- */
+function feedbackContext(){
+  const grade=$("grade").value;
+  const yrs=YOS_LABELS[num("yos",0,YOS_LABELS.length-1)]||$("yos").value;
+  const deps=$("deps").value==="yes"?"with dependents":"no dependents";
+  const st=$("stateA").value;
+  const stName=(STATES[st]&&STATES[st].name)?STATES[st].name:st;
+  let place=$("labelA").value.trim();
+  if(!place){
+    const code=$("stationA").value;
+    if(code && typeof MHA_NAMES==="object" && MHA_NAMES && MHA_NAMES[code]) place=MHA_NAMES[code];
+    else if($("zipA") && $("zipA").value.trim()) place="ZIP "+$("zipA").value.trim();
+  }
+  const bah=num("bahA",0,BAH_MAX);
+  const res=$("results");
+  const card=(res&&typeof res.querySelector==="function")?res.querySelector(".res-card .line.total .v"):null;
+  const take=card?card.textContent:"";
+  return [grade,yrs+" yrs",deps,(place||"no station set"),
+          "BAH "+money(bah),stName+" residence",
+          take?("tool showed "+take+"/mo"):null].filter(Boolean).join(" · ");
+}
+function syncFeedbackContext(){
+  const box=$("fbCtx"), out=$("fbCtxText");
+  if(!box||!out) return;
+  // only useful when the answers leave this page
+  const external = typeof FEEDBACK_IS_LINK_ONLY!=="undefined" && FEEDBACK_IS_LINK_ONLY;
+  box.hidden=!external;
+  if(external) out.textContent=feedbackContext();
+}
+if($("fbCtxCopy")){
+  $("fbCtxCopy").addEventListener("click",()=>{
+    const txt=$("fbCtxText").textContent, b=$("fbCtxCopy");
+    const done=okc=>{ b.textContent=okc?"Copied":"Select and copy"; setTimeout(()=>{b.textContent="Copy";},2000); };
+    if(navigator.clipboard&&navigator.clipboard.writeText&&window.isSecureContext!==false){
+      navigator.clipboard.writeText(txt).then(()=>done(true)).catch(()=>done(legacyCopy(txt)));
+    } else done(legacyCopy(txt));
+  });
+}
+
 applyState();
 // after applyState, so a shared ZIP link reopens on the ZIP tab
 if(typeof window.__restoreLookupModes==="function") window.__restoreLookupModes();
 calculate();
+syncFeedbackContext();
+document.querySelectorAll("input,select").forEach(el=>el.addEventListener("input",syncFeedbackContext));
+document.querySelectorAll("select").forEach(el=>el.addEventListener("change",syncFeedbackContext));
 if($("feedbackToggle") && $("feedbackForm")) syncFeedbackDefaults();
 </script>
 </body>

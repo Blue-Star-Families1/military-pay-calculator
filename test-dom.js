@@ -338,6 +338,35 @@ setTimeout(() => {
     $('zipA').value = '';
   })();
 
+  G('Feedback context line');
+  (() => {
+    // When feedback leaves the page, the auto-filled grade/station/state have
+    // nowhere to travel — a report would arrive without the inputs that
+    // produced it. The context line is what the reporter pastes in.
+    const box = $('fbCtx'), txt = $('fbCtxText');
+    ok('context block exists', !!box && !!txt);
+    if (linkOnly) {
+      ok('shown when feedback goes to an external form', box.hidden === false);
+      $('grade').value = 'O-4'; fire($('grade'), 'change');
+      $('deps').value = 'yes'; fire($('deps'), 'change');
+      $('stateA').value = 'VA'; fire($('stateA'), 'change');
+      $('labelA').value = 'Norfolk'; fire($('labelA'), 'input');
+      const s = txt.textContent;
+      ok('names the grade', /O-4/.test(s));
+      ok('names the location', /Norfolk/i.test(s));
+      ok('names the state of residence', /Virginia|VA/i.test(s));
+      ok('reports dependants', /dependent/i.test(s));
+      ok('includes the figure the tool produced', /\$[\d,]+/.test(s));
+      // must track edits, or it will describe a scenario the reporter has left
+      $('grade').value = 'E-6'; fire($('grade'), 'change');
+      ok('updates when inputs change', /E-6/.test(txt.textContent) && !/O-4/.test(txt.textContent));
+      ok('offers a copy control', !!$('fbCtxCopy'));
+      $('labelA').value = ''; fire($('labelA'), 'input');
+    } else {
+      ok('hidden when the in-page form submits directly', box.hidden === true);
+    }
+  })();
+
   G('Touch targets');
   (() => {
     // Browser default checkboxes are ~13px, under the 24px minimum, and this
