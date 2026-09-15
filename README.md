@@ -13,7 +13,7 @@ Military pay has many moving parts that change with rank, location, duty type, a
 ## Features
 
 - **2026 basic pay** for all grades (E-1–E-9, W-1–W-5, O-1–O-10, plus O-1E/2E/3E) by years of service (FY2026 NDAA, 3.8% raise).
-- **BAS** auto-added ($476.95 enlisted / $328.48 officer); **BAH** auto-fills from official 2026 DoD DTMO rates (338 housing areas) by duty station, grade, and dependents — override anytime.
+- **BAS** auto-added ($476.95 enlisted / $328.48 officer); **BAH** auto-fills from official 2026 DoD DTMO rates by grade and dependents — look it up **by duty station or by ZIP code**, and override anytime. ZIP matters for members living away from their duty station (Guard/Reserve on Title 10 or ADOS orders, families geo-baching through a homeport shift).
 - **Special & incentive pays**: sea pay, aviation/ACIP, hostile fire/IDP, hazardous duty, jump, HALO, dive, submarine, hardship, SDAP, and Family Separation Allowance (non-taxable).
 - **Deductions modeled**: federal income tax (2026 brackets + standard deduction), Social Security (6.2% to the $184,500 wage base), Medicare (1.45%), state income tax (real 2026 brackets & standard deductions for all 50 states + DC), TSP (traditional vs Roth), SGLI, combat-zone exclusion, and other allotments.
 - **Duty-station comparison** with monthly and annual take-home difference, effective tax rate, and take-home percentage.
@@ -23,8 +23,8 @@ Military pay has many moving parts that change with rank, location, duty type, a
 
 - `index.html` — the app (must be at the repo root)
 - `bah-data.js` — 2026 BAH rate tables loaded by the app (must sit next to `index.html`)
-- `test.js`, `test-dom.js` — 237 automated engine and DOM integration checks
-- `package.json`, `package-lock.json` — reproducible test command and locked test dependency
+- `zip-data.js` — official DoD ZIP-to-housing-area map, also loaded by the app
+- `build-zip-data.js` — regenerates `zip-data.js` from the DoD source file
 - `NOTES.md` — maintainer guide: data sources, yearly update steps, model assumptions
 - `social-preview.png` — link-sharing preview card
 - `README.md`, `LICENSE`

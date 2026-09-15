@@ -8,6 +8,8 @@ Internal reference for updating and maintaining the Military Take-Home Pay Estim
 | --- | --- |
 | `index.html` | The entire app — UI, styling, and calculation logic in one file. |
 | `bah-data.js` | 2026 BAH rate tables (338 housing areas). Loaded by `index.html` via `<script src>`. Must sit in the same folder. |
+| `zip-data.js` | ZIP-to-housing-area map, packed. Also loaded via `<script src>` from the same folder. |
+| `build-zip-data.js` | Regenerates `zip-data.js` from the DoD `sorted_zipmha` file. |
 | `test.js` | Dependency-free calculation-engine test suite (198 checks). |
 | `test-dom.js` | Browser-DOM integration test suite (62 checks). |
 | `package.json` / `package-lock.json` | Reproducible Node.js test scripts and pinned development dependencies. |
@@ -31,6 +33,11 @@ Both `index.html` and `bah-data.js` must be deployed together or BAH auto-fill b
 ## Updating for a new year (e.g., 2027)
 
 1. **BAH:** download `BAH-ASCII-2027.zip` from travel.dod.mil (Allowances → BAH → BAH Data Collection). Unzip. Regenerate `bah-data.js` from `bahw27.txt`, `bahwo27.txt`, `mhanames27.txt`. Column order is fixed: `E1..E9, W1..W5, O1E, O2E, O3E, O1..O10` (27 columns). The `BAH_COL` map in `index.html` encodes this.
+   **Also regenerate the ZIP map from the same bundle** — it changes yearly too:
+   ```
+   node build-zip-data.js sorted_zipmha27.txt
+   ```
+   The script prints a round-trip check; `round-trip errors` and `phantom lookups` must both be 0 before committing.
 2. **Basic pay:** replace the `PAY` object with the new year's monthly table.
 3. **BAS:** update `BAS_ENL` / `BAS_OFF`.
 4. **Federal:** update `BRACKETS`, `STD_DED`, and `SS_WAGE_BASE`.
@@ -66,6 +73,36 @@ Compensation Tables, January 1, 2026**.
   individual's own filing status with no credits. (DoD's own figures are
   non-monotonic — E-8 advantage sits below E-5 — which only makes sense with
   varying dependent/credit assumptions.)
+
+## BAH lookup: duty station or ZIP
+
+Each scenario offers a **Duty station / ZIP code** toggle. Both fill the same
+BAH field; the member picks whichever they know.
+
+ZIP exists because members frequently live away from their duty station — Guard
+and Reserve on Title 10 or ADOS orders that can run two years, Navy families who
+geo-bach through a homeport shift. Previously the page sent those people to the
+external DoD BAH lookup, which loses them.
+
+- `zip-data.js` packs the official DTMO mapping: 40,959 ZIPs collapsed into
+  23,844 ranges over 339 areas, base-36 encoded, ~135 KB instead of 533 KB.
+  `zipToMha()` binary-searches the ranges.
+- **Ranges never span a gap in ZIP numbering.** An unassigned ZIP returns null
+  and the UI says so, rather than inheriting a neighbour's rate.
+- A failed lookup (unknown ZIP, or an overseas ZIP that uses OHA) **zeroes the
+  BAH field**. Leaving the previous location's rate there looks plausible and
+  would silently price the wrong place.
+- The chosen mode round-trips in shared links via the hidden `modeA`/`modeB`
+  fields, and `__restoreLookupModes()` runs *after* `applyState()`. Without that,
+  a ZIP link reopened on the station tab; for a cost-group area — which has no
+  dropdown entry — the station came back blank and a later grade change left the
+  old rate in place.
+
+**County cost groups are deliberately absent from the dropdown.** The 39
+`COUNTY COST GROUP nnn` areas are DFAS bookkeeping for rural counties outside any
+named metro area; no member knows their cost group. They remain reachable by ZIP,
+and a test asserts all 39 still resolve. Real county *names* (Honolulu County,
+Maui County) are kept — those are places people recognise.
 
 ## Known limitations (intentional)
 
