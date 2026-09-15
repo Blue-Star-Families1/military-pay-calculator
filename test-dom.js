@@ -36,11 +36,14 @@ const URL_ = 'https://blue-star-families1.github.io/military-pay-calculator/';
 let html = fs.readFileSync(path.join(DIR, 'index.html'), 'utf8');
 const bahSrc = fs.readFileSync(path.join(DIR, 'bah-data.js'), 'utf8');
 html = html.replace('<script src="bah-data.js"></script>', '<script>' + bahSrc + '</script>');
+const zipSrcInline = fs.readFileSync(path.join(DIR, 'zip-data.js'), 'utf8');
+html = html.replace('<script src="zip-data.js"></script>', '<script>' + zipSrcInline + '</script>');
 
 // Rate tables, read independently, so expectations come from the data itself
 // rather than from hardcoded numbers that could drift after a yearly update.
 const data = {};
 new Function('g', bahSrc + ';g.BAH_W=BAH_W;g.BAH_WO=BAH_WO;g.MHA_NAMES=MHA_NAMES;')(data);
+const COL_ = { 'E-5': 4, 'O-3': 19 };
 const COL = { 'E-5': 4, 'O-3': 19 };
 const SD = 'CA038';   // San Diego — present in every published rate table
 
@@ -75,8 +78,21 @@ setTimeout(() => {
   G('Controls are really populated');
   ok('pay grades listed', $('grade').options.length >= 28);
   ok('under-4-months E-1 offered first', $('grade').options[0].textContent === 'E-1 <4mo');
-  ok('all rated duty stations listed',
-     $('stationA').options.length === Object.keys(data.BAH_W).length + 1); // +1 placeholder
+  // "COUNTY COST GROUP nnn" areas are deliberately excluded — a member cannot
+  // know their cost group, so they are reached by ZIP instead.
+  (() => {
+    const all = Object.keys(data.MHA_NAMES);
+    const ccg = all.filter(c => /^COUNTY COST GROUP\b/i.test(data.MHA_NAMES[c]));
+    // mirror the app's filter: must have a rate row, and must not be a cost group
+    const listable = all.filter(c => Array.isArray(data.BAH_W[c]) &&
+                                     !/^COUNTY COST GROUP\b/i.test(data.MHA_NAMES[c]));
+    ok('some cost-group areas exist in the source data', ccg.length > 0);
+    ok('every named duty station is listed',
+       $('stationA').options.length === listable.length + 1); // +1 placeholder
+    const labels = [...$('stationA').options].map(o => o.textContent);
+    ok('no DFAS cost-group labels in the dropdown',
+       !labels.some(t => /COUNTY COST GROUP/i.test(t)));
+  })();
   ok('station dropdown enabled when data loads', $('stationA').disabled === false);
   ok('unmapped placeholder area excluded',
      ![...$('stationA').options].some(o => /UNKNOWN/i.test(o.textContent)));
@@ -245,6 +261,57 @@ setTimeout(() => {
       ok('calculator fields are still in the share link', /grade=/.test(qs) && /stateA=/.test(qs));
     }
     nm.value = ''; em.value = ''; $('feedbackAccuracy').value = '';
+  })();
+
+  G('ZIP code lookup');
+  (() => {
+    const zipSrc = fs.readFileSync(path.join(DIR, 'zip-data.js'), 'utf8');
+    const zd = {};
+    new Function('g', zipSrc + ';g.ZIP_DICT=ZIP_DICT;g.ZIP_PACK=ZIP_PACK;')(zd);
+    ok('zip table ships', typeof zd.ZIP_PACK === 'string' && zd.ZIP_PACK.length > 1000);
+    ok('zip dictionary covers the housing areas', zd.ZIP_DICT.length > 300);
+
+    const sw = d.querySelector('.lookup-switch');
+    ok('a duty-station / ZIP switch is offered', !!sw && !sw.hidden);
+    ok('station is the default view', $('stationWrapA').hidden === false && $('zipWrapA').hidden === true);
+
+    // Switching reveals the ZIP field and updates the pressed state.
+    $('byZipA').click();
+    ok('choosing ZIP reveals the field', $('zipWrapA').hidden === false && $('stationWrapA').hidden === true);
+    eq('ZIP button reports pressed', $('byZipA').getAttribute('aria-pressed'), 'true');
+    eq('station button reports unpressed', $('byStationA').getAttribute('aria-pressed'), 'false');
+
+    // A real ZIP must fill BAH with the same figure the station lookup gives.
+    $('grade').value = 'E-5'; fire($('grade'), 'change');
+    $('deps').value = 'yes'; fire($('deps'), 'change');
+    $('zipA').value = '92134'; fire($('zipA'), 'input');          // San Diego
+    const viaZip = $('bahA').value;
+    ok('a valid ZIP fills the BAH field', Number(viaZip) > 0);
+    ok('it reports which area matched', /Matched/i.test($('zipNoteA').textContent));
+    $('stationA').value = 'CA038'; fire($('stationA'), 'change');
+    eq('ZIP and duty station agree for the same area', viaZip, $('bahA').value);
+
+    // Bad input must say so rather than silently leaving a stale rate.
+    $('byZipA').click();
+    $('zipA').value = '123'; fire($('zipA'), 'input');
+    ok('a short ZIP is rejected', /5-digit/i.test($('zipNoteA').textContent));
+    $('zipA').value = '00000'; fire($('zipA'), 'input');
+    ok('an unassigned ZIP is reported', /No BAH area|outside the published/i.test($('zipNoteA').textContent));
+
+    // Cost-group areas are unreachable by name but must resolve by ZIP.
+    const ccgCodes = Object.keys(data.MHA_NAMES)
+      .filter(c => /^COUNTY COST GROUP\b/i.test(data.MHA_NAMES[c]));
+    const packed = zd.ZIP_PACK.split(' ');
+    const dictIdx = new Map(zd.ZIP_DICT.map((m, i) => [m, i]));
+    const reachable = ccgCodes.filter(c => {
+      const i = dictIdx.get(c);
+      return i !== undefined && packed.some(r => parseInt(r.split('.').pop(), 36) === i);
+    });
+    ok('cost-group areas are still reachable by ZIP (' + reachable.length + '/' + ccgCodes.length + ')',
+       reachable.length === ccgCodes.length);
+
+    $('byStationA').click();
+    $('zipA').value = '';
   })();
 
   G('Touch targets');

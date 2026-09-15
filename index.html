@@ -62,6 +62,14 @@
      label a comfortable hit area. */
   input[type=checkbox]{width:18px;height:18px;accent-color:var(--steel);cursor:pointer;flex:none}
   .toggle-row label,.sp-row label{cursor:pointer;min-height:24px;display:flex;align-items:center}
+  .lookup-switch{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-bottom:9px}
+  .lookup-switch .lk{appearance:none;border:0;background:var(--panel);color:var(--muted);font:inherit;
+    font-size:12px;font-weight:700;padding:7px 13px;cursor:pointer;min-height:32px}
+  .lookup-switch .lk+.lk{border-left:1px solid var(--line)}
+  .lookup-switch .lk.on{background:var(--navy);color:#fff}
+  .lookup-switch .lk:focus-visible{outline:2px solid var(--sky);outline-offset:-2px}
+  .zip-ok{color:var(--good);font-weight:600}
+  .zip-bad{color:var(--bad);font-weight:600}
   .scenarios,.results{display:grid;grid-template-columns:1fr 1fr;gap:18px}
   /* single-scenario mode: a class, never an inline style — an inline style
      would outrank the mobile media query below and never let cards stack */
@@ -243,13 +251,24 @@
           <input type="text" id="labelA" placeholder="e.g., Fort Bragg, NC">
         </div>
         <div style="margin-bottom:12px">
-          <label for="stationA">Duty station (BAH area)</label>
-          <select id="stationA"><option value="">— choose to auto-fill BAH —</option></select>
+          <div class="lookup-switch" role="group" aria-label="Find BAH by">
+            <button type="button" class="lk on" id="byStationA" data-mode="station" data-scn="A" aria-pressed="true">Duty station</button>
+            <button type="button" class="lk" id="byZipA" data-mode="zip" data-scn="A" aria-pressed="false">ZIP code</button>
+          </div>
+          <div id="stationWrapA">
+            <label for="stationA">Duty station (BAH area)</label>
+            <select id="stationA"><option value="">— choose to auto-fill BAH —</option></select>
+          </div>
+          <div id="zipWrapA" hidden>
+            <label for="zipA">ZIP code</label>
+            <input type="text" id="zipA" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="e.g., 92134">
+            <div class="hint" id="zipNoteA">Use the ZIP where you are living — helpful if your home of record is away from your duty station.</div>
+          </div>
         </div>
         <div style="margin-bottom:12px">
           <label for="bahA">Monthly BAH ($)</label>
           <input type="number" id="bahA" value="1800" min="0" step="1">
-          <div class="hint">Auto-fills from station + grade + dependents; you can override. Or look up any ZIP at the <a href="https://www.travel.dod.mil/Allowances/Basic-Allowance-for-Housing/BAH-Rate-Lookup/" target="_blank" rel="noopener">DoD BAH calculator</a>.</div>
+          <div class="hint">Auto-fills from your duty station or ZIP, plus grade and dependents. You can override it.</div>
         </div>
         <div>
           <label for="stateA">State of legal residence</label>
@@ -269,13 +288,24 @@
           <input type="text" id="labelB" placeholder="e.g., San Diego, CA">
         </div>
         <div style="margin-bottom:12px">
-          <label for="stationB">Duty station (BAH area)</label>
-          <select id="stationB"><option value="">— choose to auto-fill BAH —</option></select>
+          <div class="lookup-switch" role="group" aria-label="Find BAH by">
+            <button type="button" class="lk on" id="byStationB" data-mode="station" data-scn="B" aria-pressed="true">Duty station</button>
+            <button type="button" class="lk" id="byZipB" data-mode="zip" data-scn="B" aria-pressed="false">ZIP code</button>
+          </div>
+          <div id="stationWrapB">
+            <label for="stationB">Duty station (BAH area)</label>
+            <select id="stationB"><option value="">— choose to auto-fill BAH —</option></select>
+          </div>
+          <div id="zipWrapB" hidden>
+            <label for="zipB">ZIP code</label>
+            <input type="text" id="zipB" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="e.g., 28307">
+            <div class="hint" id="zipNoteB">Use the ZIP where you would be living at the new location.</div>
+          </div>
         </div>
         <div style="margin-bottom:12px">
           <label for="bahB">Monthly BAH ($)</label>
           <input type="number" id="bahB" value="3300" min="0" step="1">
-          <div class="hint">Auto-fills from station + grade + dependents; you can override. Or look up any ZIP at the <a href="https://www.travel.dod.mil/Allowances/Basic-Allowance-for-Housing/BAH-Rate-Lookup/" target="_blank" rel="noopener">DoD BAH calculator</a>.</div>
+          <div class="hint">Auto-fills from your duty station or ZIP, plus grade and dependents. You can override it.</div>
         </div>
         <div>
           <label for="stateB">State of legal residence</label>
@@ -377,6 +407,7 @@
 </main>
 
 <script src="bah-data.js"></script>
+<script src="zip-data.js"></script>
 <script>
 // escape user-supplied text before it reaches innerHTML (labels are shareable via URL)
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
@@ -589,8 +620,13 @@ const BAH_OK = (typeof MHA_NAMES==="object" && MHA_NAMES!==null &&
                 typeof BAH_W==="object"     && BAH_W!==null     &&
                 typeof BAH_WO==="object"    && BAH_WO!==null    &&
                 Object.keys(BAH_W).length>0);
+// "COUNTY COST GROUP 510" and friends are DFAS bookkeeping labels for rural
+// counties outside any named metro area. A service member has no way to know
+// which group they are in, so these are kept out of the dropdown — the ZIP
+// lookup resolves them instead, which is how someone would actually find them.
+const CCG_RE=/^COUNTY COST GROUP\b/i;
 const stationOpts = BAH_OK ? Object.entries(MHA_NAMES)
-      .filter(([code,nm])=>Array.isArray(BAH_W[code])&&typeof nm==="string")
+      .filter(([code,nm])=>Array.isArray(BAH_W[code])&&typeof nm==="string"&&!CCG_RE.test(nm))
       .sort((a,b)=>a[1].localeCompare(b[1])) : [];
 if(stationOpts.length){
   ["stationA","stationB"].forEach(sid=>{const sel=$(sid);stationOpts.forEach(([code,nm])=>{const o=document.createElement("option");o.value=code;o.textContent=nm;sel.appendChild(o);});});
@@ -605,7 +641,101 @@ if(stationOpts.length){
 function applyBah(stationId,bahId){const v=bahLookup($(stationId).value);if(v!=null)$(bahId).value=v;}
 $("stationA").addEventListener("change",()=>{applyBah("stationA","bahA");calculate();});
 $("stationB").addEventListener("change",()=>{applyBah("stationB","bahB");calculate();});
-["grade","deps"].forEach(id=>$(id).addEventListener("change",()=>{applyBah("stationA","bahA");applyBah("stationB","bahB");calculate();}));
+
+/* ---------------------------------------------------------------------------
+   ZIP -> housing area
+
+   Members frequently live away from their duty station — Guard and Reserve on
+   Title 10 or ADOS orders, Navy families who geo-bach through a homeport shift.
+   A ZIP is the thing they actually know, and sending them to an external DoD
+   page to find a rate loses them. zip-data.js ships the official DTMO mapping
+   packed into base-36 ranges; expand it once, then binary search.
+--------------------------------------------------------------------------- */
+let ZIP_S=null,ZIP_E=null,ZIP_M=null;
+function expandZipRanges(){
+  if(ZIP_S) return true;
+  if(typeof ZIP_PACK!=="string" || !Array.isArray(typeof ZIP_DICT!=="undefined"?ZIP_DICT:null)) return false;
+  try{
+    const s=[],e=[],m=[]; let cur=0;
+    for(const rec of ZIP_PACK.split(" ")){
+      if(!rec) continue;
+      const p=rec.split(".");
+      const delta=parseInt(p[0],36);
+      const len=p.length===3?parseInt(p[1],36):1;
+      const mi=parseInt(p[p.length-1],36);
+      if(!Number.isFinite(delta)||!Number.isFinite(len)||!Number.isFinite(mi)) return false;
+      cur+=delta; s.push(cur); e.push(cur+len-1); m.push(ZIP_DICT[mi]);
+    }
+    ZIP_S=s; ZIP_E=e; ZIP_M=m; return true;
+  }catch(err){ return false; }
+}
+function zipToMha(zip){
+  if(!expandZipRanges()) return null;
+  const z=parseInt(zip,10);
+  if(!Number.isFinite(z)) return null;
+  let lo=0,hi=ZIP_S.length-1;
+  while(lo<=hi){
+    const mid=(lo+hi)>>1;
+    if(z<ZIP_S[mid]) hi=mid-1;
+    else if(z>ZIP_E[mid]) lo=mid+1;
+    else return ZIP_M[mid];
+  }
+  return null;
+}
+const ZIP_OK = (typeof ZIP_PACK==="string" && typeof ZIP_DICT!=="undefined");
+function applyZip(scn){
+  const raw=String($("zip"+scn).value||"").trim();
+  const note=$("zipNote"+scn);
+  const setNote=(txt,cls)=>{ note.textContent=txt; note.className="hint"+(cls?" "+cls:""); };
+  if(!raw){ setNote("Use the ZIP where you are living — helpful if your home of record is away from your duty station."); return; }
+  if(!/^\d{5}$/.test(raw)){ setNote("Enter a 5-digit ZIP code.","zip-bad"); return; }
+  const mha=zipToMha(raw);
+  if(!mha){ setNote("No BAH area found for that ZIP. Check the digits, or enter the amount below manually.","zip-bad"); return; }
+  const name=(typeof MHA_NAMES==="object"&&MHA_NAMES)?MHA_NAMES[mha]:null;
+  const v=bahLookup(mha);
+  if(v==null){
+    // e.g. the XX499 placeholder, and overseas ZIPs that use OHA rather than BAH
+    setNote("That ZIP is outside the published BAH tables (overseas locations use OHA). Enter the amount below manually.","zip-bad");
+    return;
+  }
+  $("bah"+scn).value=v;
+  // Keep the dropdown in step so the two controls never disagree, and so the
+  // shared link still restores a station. CCG areas are not in the list.
+  const sel=$("station"+scn);
+  if(sel && !sel.disabled){ sel.value=[...sel.options].some(o=>o.value===mha)?mha:""; }
+  setNote("Matched "+(name||mha)+".","zip-ok");
+}
+if(ZIP_OK){
+  ["A","B"].forEach(scn=>{
+    const zi=$("zip"+scn);
+    if(zi) zi.addEventListener("input",()=>{applyZip(scn);calculate();});
+  });
+  document.querySelectorAll(".lookup-switch .lk").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const scn=btn.getAttribute("data-scn"), mode=btn.getAttribute("data-mode");
+      const zipMode=mode==="zip";
+      $("stationWrap"+scn).hidden=zipMode;
+      $("zipWrap"+scn).hidden=!zipMode;
+      document.querySelectorAll('.lookup-switch .lk[data-scn="'+scn+'"]').forEach(b=>{
+        const on=b===btn;
+        b.classList.toggle("on",on);
+        b.setAttribute("aria-pressed",String(on));
+      });
+      if(zipMode) $("zip"+scn).focus();
+    });
+  });
+} else {
+  // No ZIP table shipped: hide the switch rather than offer a control that
+  // cannot work, and leave the duty-station dropdown as the only path.
+  document.querySelectorAll(".lookup-switch").forEach(el=>{ el.hidden=true; });
+}
+
+["grade","deps"].forEach(id=>$(id).addEventListener("change",()=>{
+  applyBah("stationA","bahA");applyBah("stationB","bahB");
+  // a ZIP-selected area must re-price when grade or dependents change
+  ["A","B"].forEach(scn=>{ if($("zipWrap"+scn)&&!$("zipWrap"+scn).hidden&&$("zip"+scn).value) applyZip(scn); });
+  calculate();
+}));
 
 const spWrap=$("specials");
 SPECIALS.forEach(([key,label,amt,tax])=>{
