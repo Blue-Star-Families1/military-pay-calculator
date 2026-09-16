@@ -384,6 +384,36 @@ G('State tax: hand-computed golden values');
   ok('all state effective rates plausible at $60k', implausible === 0);
 })();
 
+G('COLA, with the two kinds taxed differently');
+(() => {
+  const byKey = Object.fromEntries(SPECIALS.map(s => [s[0], s]));
+  ok('CONUS COLA is offered', !!byKey.conuscola);
+  ok('overseas COLA is offered', !!byKey.oconuscola);
+  ok('CONUS COLA is taxable', byKey.conuscola[3] === true);
+  ok('overseas COLA is not taxable', byKey.oconuscola[3] === false);
+  ok('both default to zero — the rate varies by location and grade',
+     byKey.conuscola[2] === 0 && byKey.oconuscola[2] === 0);
+
+  // The tax treatment has to show up in the actual numbers, not just the flag.
+  const amount = 400;
+  baseline(); chk('sp_conuscola', true); set('spamt_conuscola', String(amount));
+  const conus = calcScenario(1800, 'NC', false);
+  baseline(); chk('sp_oconuscola', true); set('spamt_oconuscola', String(amount));
+  const oconus = calcScenario(1800, 'NC', false);
+  baseline();
+  const plain = calcScenario(1800, 'NC', false);
+
+  eq('CONUS COLA raises gross', conus.gross, plain.gross + amount, 0.01);
+  eq('overseas COLA raises gross too', oconus.gross, plain.gross + amount, 0.01);
+  ok('CONUS COLA is taxed', conus.fedTax > plain.fedTax);
+  eq('overseas COLA is not taxed', oconus.fedTax, plain.fedTax, 0.01);
+  ok('so the same amount overseas keeps more', oconus.takeHome > conus.takeHome);
+  // FICA follows the same taxable/non-taxable split
+  ok('CONUS COLA is subject to FICA', conus.ss > plain.ss);
+  eq('overseas COLA is not', oconus.ss, plain.ss, 0.01);
+  baseline();
+})();
+
 G('SGLI premiums follow the published VA formula');
 (() => {
   // VA rate from 1 Jul 2025: $0.05 per $1,000 of cover, plus $1.00 TSGLI.

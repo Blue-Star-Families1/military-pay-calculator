@@ -97,9 +97,16 @@ setTimeout(() => {
   ok('unmapped placeholder area excluded',
      ![...$('stationA').options].some(o => /UNKNOWN/i.test(o.textContent)));
   eq('all states and DC listed', $('stateA').options.length, 51);
-  eq('special-pay rows generated', $('specials').querySelectorAll('input[type=checkbox]').length, 12);
-  ok('special-pay amounts carry an aria-label',
-     $('specials').querySelectorAll('input[type=number][aria-label]').length === 12);
+  // count comes from the data, so adding a pay does not break the test
+  (() => {
+    const declared = (html.match(/const SPECIALS\s*=\s*\[([\s\S]*?)\n\];/) || [])[1] || '';
+    const n = (declared.match(/^\s*\["/gm) || []).length;
+    ok('special pays are declared', n > 0);
+    eq('a row per declared special pay',
+       $('specials').querySelectorAll('input[type=checkbox]').length, n);
+    eq('every amount box carries an aria-label',
+       $('specials').querySelectorAll('input[type=number][aria-label]').length, n);
+  })();
 
   G('Years of service read as ranges, not gaps');
   (() => {

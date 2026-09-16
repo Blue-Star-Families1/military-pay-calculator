@@ -248,7 +248,7 @@
 
   <div class="card">
     <h2>Special &amp; incentive pays</h2>
-    <p class="sub">Check any that apply and adjust the monthly amount. Defaults are common 2026 maximums; your amount may differ by service and qualification. All are taxable except Family Separation Allowance.</p>
+    <p class="sub">Check any that apply and adjust the monthly amount. Defaults are common 2026 maximums; your amount may differ by service and qualification, so the surest figures are the ones on your LES. Rows marked <em style="color:var(--good)">(non-taxable)</em> are excluded from income tax — everything else is taxed.</p>
     <div class="specials" id="specials"></div>
   </div>
 
@@ -502,6 +502,12 @@ const SPECIALS = [
   ["hardship","Hardship duty pay",150,true],
   ["sdap","Special duty assignment pay (SDAP)",450,true],
   ["fsa","Family separation allowance (FSA)",250,false],
+  // COLA is paid on top of BAH in high-cost areas. The two kinds are taxed
+  // differently, so they are separate rows rather than one amount.
+  // Defaults are 0: the rate varies by location, grade, years and dependents,
+  // and the member can read the exact figure off their LES.
+  ["conuscola","CONUS COLA — high-cost U.S. areas",0,true],
+  ["oconuscola","Overseas COLA (OCONUS)",0,false],
   ["custom","Other special pay (taxable)",0,true]
 ];
 
