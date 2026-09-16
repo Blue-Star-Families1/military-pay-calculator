@@ -359,7 +359,7 @@
       <button id="feedbackToggle" class="feedback-toggle" type="button" aria-expanded="false" aria-controls="feedbackForm">Share your feedback</button>
     </div>
     <div class="fb-ctx" id="fbCtx" hidden>
-      <div class="fb-ctx-lab">Copy this into your answer so we can reproduce it:</div>
+      <div class="fb-ctx-lab">Sent with your feedback so we can reproduce it:</div>
       <code id="fbCtxText"></code>
       <button type="button" class="fb-ctx-copy" id="fbCtxCopy">Copy</button>
     </div>
@@ -1101,7 +1101,17 @@ function setFeedbackFormOpen(open){
    in-page fields are replaced by a button to the form. If both are empty the
    card falls back to the public GitHub issue link, so the button is never dead.
 --------------------------------------------------------------------------- */
-const FEEDBACK_FORM_URL = "https://forms.gle/cmB1rFQYpWdxfkxz8";
+const FEEDBACK_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeHHwV6T5ui2C2gVclTrtuOrFy7g9bDx7rr-fdC5dXBROO-hQ/viewform";
+/* Google Form field ids, so the context questions arrive already filled in.
+   To refresh after editing the form: open the live form, and in the console read
+   FB_PUBLIC_LOAD_DATA_[1][1] — each question is [id, title, ...] with the entry
+   id at [4][0][0]. Set any of these to "" to stop sending that field. */
+const FEEDBACK_PREFILL = {
+  rank:    "entry.727444521",
+  years:   "entry.170457981",
+  station: "entry.1935387527",
+  state:   "entry.1890022585"
+};
 const FEEDBACK_ENDPOINT = "";
 // A Google Form (and no POST endpoint) means the answers are collected off-page:
 // send people straight there instead of showing fields that cannot submit.
@@ -1225,11 +1235,42 @@ function feedbackContext(){
           "BAH "+money(bah),stName+" residence",
           take?("tool showed "+take+"/mo"):null].filter(Boolean).join(" · ");
 }
+// Build the form URL with the scenario already filled in, so the reporter only
+// has to answer the two questions that need a human.
+function feedbackUrl(){
+  const base=String(FEEDBACK_FORM_URL||"").trim();
+  if(!/^https:\/\//i.test(base)) return base;
+  const map=(typeof FEEDBACK_PREFILL==="object"&&FEEDBACK_PREFILL)?FEEDBACK_PREFILL:{};
+  const st=$("stateA").value;
+  let place=$("labelA").value.trim();
+  if(!place){
+    const code=$("stationA").value;
+    if(code && typeof MHA_NAMES==="object" && MHA_NAMES && MHA_NAMES[code]) place=MHA_NAMES[code];
+    else if($("zipA") && $("zipA").value.trim()) place="ZIP "+$("zipA").value.trim();
+  }
+  const vals={
+    rank:    $("grade").value,
+    years:   YOS_LABELS[num("yos",0,YOS_LABELS.length-1)]||$("yos").value,
+    station: place,
+    state:   (STATES[st]&&STATES[st].name)?STATES[st].name:st
+  };
+  const p=new URLSearchParams();
+  p.set("usp","pp_url");
+  Object.keys(vals).forEach(k=>{
+    const field=map[k];
+    if(field && vals[k]) p.set(field, vals[k]);
+  });
+  return base+(base.indexOf("?")>-1?"&":"?")+p.toString();
+}
 function syncFeedbackContext(){
   const box=$("fbCtx"), out=$("fbCtxText");
-  if(!box||!out) return;
-  // only useful when the answers leave this page
   const external = typeof FEEDBACK_IS_LINK_ONLY!=="undefined" && FEEDBACK_IS_LINK_ONLY;
+  // keep the outbound link current as the scenario changes
+  const btn=$("feedbackToggle");
+  if(external && btn && typeof btn.setAttribute==="function" && btn.tagName==="A"){
+    btn.setAttribute("href", feedbackUrl());
+  }
+  if(!box||!out) return;
   box.hidden=!external;
   if(external) out.textContent=feedbackContext();
 }

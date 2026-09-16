@@ -136,7 +136,9 @@ setTimeout(() => {
     // which would leave the button doing nothing at all.
     const t = $('feedbackToggle');
     eq('the control is an anchor, not a popup button', t.tagName, 'A');
-    eq('it points at the configured form', t.getAttribute('href'), FORM_URL);
+    // href carries prefill parameters, so compare the base rather than the whole
+    ok('it points at the configured form',
+       (t.getAttribute('href') || '').indexOf(FORM_URL) === 0);
     ok('it opens in a new tab safely', t.target === '_blank' && /noopener/.test(t.rel));
     ok('it keeps the button styling', /feedback-toggle/.test(t.className));
     // As an <a> it inherits link defaults; it must still read as a button.
@@ -351,6 +353,31 @@ setTimeout(() => {
     ok('context block exists', !!box && !!txt);
     if (linkOnly) {
       ok('shown when feedback goes to an external form', box.hidden === false);
+      // The context questions must arrive already answered, not be retyped.
+      (() => {
+        // give every context field a value so all four should be sent
+        $('labelA').value = 'Fort Bragg'; fire($('labelA'), 'input');
+        const href = $('feedbackToggle').getAttribute('href') || '';
+        ok('outbound link is a prefill link', /usp=pp_url/.test(href));
+        ok('it carries the rank field', /entry\.\d+=/.test(href));
+        const ids = (href.match(/entry\.\d+/g) || []);
+        ok('all four context fields are sent (' + ids.length + '/4)', ids.length === 4);
+        ok('no duplicate fields', new Set(ids).size === ids.length);
+        // an empty value must be omitted rather than sent blank
+        $('labelA').value = ''; fire($('labelA'), 'input');
+        $('stationA').value = ''; fire($('stationA'), 'change');
+        const bare = ($('feedbackToggle').getAttribute('href') || '').match(/entry\.\d+/g) || [];
+        ok('blank context fields are omitted', bare.length < 4);
+        $('labelA').value = 'Fort Bragg'; fire($('labelA'), 'input');
+        // values must be real, not placeholders
+        $('grade').value = 'O-5'; fire($('grade'), 'change');
+        $('labelA').value = 'Norfolk'; fire($('labelA'), 'input');
+        const h2 = decodeURIComponent($('feedbackToggle').getAttribute('href') || '');
+        ok('rank tracks the current selection', /O-5/.test(h2));
+        ok('location tracks the current selection', /Norfolk/.test(h2));
+        ok('answers are not prefilled', !/entry\.999538463=.+/.test(h2));
+        $('labelA').value = ''; fire($('labelA'), 'input');
+      })();
       $('grade').value = 'O-4'; fire($('grade'), 'change');
       $('deps').value = 'yes'; fire($('deps'), 'change');
       $('stateA').value = 'VA'; fire($('stateA'), 'change');
