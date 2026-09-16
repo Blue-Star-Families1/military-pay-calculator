@@ -120,15 +120,32 @@ Maui County) are kept — those are places people recognise.
 
 ## Feedback form
 
-The card under the results collects, in this order:
+**Currently live: the Google Form path.** The button under the results is a link
+to the form; the in-page fields described below are hidden because they have no
+endpoint to submit to.
 
-1. **Was this accurate or inaccurate compared with your actual pay? Please explain** — required
-2. **How can we improve it? Are there fields or situations missing?** — required
-3. **Name** and **email** — required, so we can follow up
-4. Calculator result and LES result in dollars — optional
+The Google Form asks, in this order: Rank · Years of service · Duty station ·
+State (all optional) · *Was this accurate or inaccurate…* · *How can we improve
+it…* · Name · Email (those four required).
 
-Grade, years of service, duty station, and state are filled in automatically
-from the current selections and sent along as read-only context.
+**The first four arrive pre-filled.** `feedbackUrl()` appends them as prefill
+parameters using the ids in `FEEDBACK_PREFILL`, so the reporter only answers the
+two questions that need a human.
+
+> ⚠️ **If you edit the Google Form, re-check those ids.** Adding, deleting or
+> retitling a question can change them, and a stale id fails silently — the
+> field simply arrives blank, with nothing in the UI to indicate it.
+> To read the current ids: open the live form and evaluate
+> `FB_PUBLIC_LOAD_DATA_[1][1]` in the console. Each question is `[id, title, …]`
+> with the entry id at `[4][0][0]`. Set any entry in `FEEDBACK_PREFILL` to `""`
+> to stop sending that field.
+
+The context line under the button shows exactly what is being sent, so the
+member can see it before it leaves the page.
+
+**Known limit:** prefill describes **Scenario A only**. Someone comparing two
+stations who finds a fault in Scenario B will send Scenario A's location. The
+free-text answers are where that gets clarified.
 
 **Where the answers go.** Set exactly one of two constants near the top of the
 `<script>` in `index.html`:
