@@ -213,26 +213,26 @@
         </select>
       </div>
       <div>
-        <label for="tsp">TSP contribution (% of basic pay)</label>
+        <label for="tsp">TSP — Traditional (% of basic pay)</label>
         <input type="number" id="tsp" value="5" min="0" max="100" step="1">
+        <div class="hint">Pre-tax: lowers your taxable income.</div>
       </div>
       <div>
-        <label for="tsptype">TSP type</label>
-        <select id="tsptype">
-          <option value="trad">Traditional (pre-tax)</option>
-          <option value="roth">Roth (after-tax)</option>
-        </select>
+        <label for="tspRoth">TSP — Roth (% of basic pay)</label>
+        <input type="number" id="tspRoth" value="0" min="0" max="100" step="1">
+        <div class="hint">After-tax. You can contribute to both — on your LES look for <strong>TSP Base</strong> (Traditional) and <strong>Roth TSP</strong> under Deductions.</div>
       </div>
       <div>
         <label for="sgli">SGLI life insurance</label>
         <select id="sgli">
-          <option value="31">$500,000 coverage — $31.00/mo</option>
-          <option value="26.5">$400,000 — $26.50/mo</option>
-          <option value="20.5">$300,000 — $20.50/mo</option>
-          <option value="14.5">$200,000 — $14.50/mo</option>
-          <option value="8.5">$100,000 — $8.50/mo</option>
+          <option value="26">$500,000 coverage — $26.00/mo</option>
+          <option value="21">$400,000 — $21.00/mo</option>
+          <option value="16">$300,000 — $16.00/mo</option>
+          <option value="11">$200,000 — $11.00/mo</option>
+          <option value="6">$100,000 — $6.00/mo</option>
           <option value="0">Declined — $0</option>
         </select>
+        <div class="hint">$0.05 per $1,000 plus $1.00 TSGLI (VA rate, from 1 Jul 2025). On your LES it is the <strong>SGLI</strong> line under Deductions.</div>
       </div>
       <div>
         <label for="other">Other monthly deductions ($)</label>
@@ -628,7 +628,21 @@ function stateTaxAnnual(code, annualTaxable, filing, fedAnnual){
 const $=id=>document.getElementById(id);
 GRADE_ORDER.forEach(g=>{const o=document.createElement("option");o.value=g;o.textContent=g;$("grade").appendChild(o);});
 $("grade").value="E-5";
-YOS_LABELS.forEach((l,i)=>{const o=document.createElement("option");o.value=i;o.textContent=l;$("yos").appendChild(o);});
+/* Basic pay changes only at the DFAS longevity breakpoints, so the list jumps:
+   16 then 18, 26 then 30. That reads like missing years unless the options say
+   what they actually mean, so each is shown as the range it covers. */
+YOS_LABELS.forEach((l,i)=>{
+  const o=document.createElement("option");
+  o.value=i;
+  const next=YOS_LABELS[i+1];
+  if(i===0) o.textContent="Under 2 years";
+  else if(!next) o.textContent="Over "+parseInt(l,10)+" years";
+  else {
+    const from=parseInt(l,10), to=parseInt(next,10)-1;
+    o.textContent = (to>from) ? (from+"–"+to+" years") : (from+" years");
+  }
+  $("yos").appendChild(o);
+});
 $("yos").value=4;
 ["stateA","stateB"].forEach(sid=>{
   Object.keys(STATES).forEach(k=>{const o=document.createElement("option");o.value=k;o.textContent=STATES[k].name;$(sid).appendChild(o);});
@@ -869,13 +883,18 @@ function calcScenario(bah, stateCode, stateExempt){
   bah = Math.max(0, Number.isFinite(bah)?bah:0);
   const gross = base + bah + bas + spTaxable + spNontax;
 
-  const tspPct=num("tsp",0,100)/100;
-  const tspAmt=base*tspPct;
-  const tspTrad = $("tsptype").value==="trad";
+  // Traditional and Roth are separate elections and can run together, so they
+  // are separate inputs. Only the Traditional share reduces taxable income.
+  let tradPct=num("tsp",0,100)/100;
+  let rothPct=num("tspRoth",0,100)/100;
+  // you cannot defer more than you earn
+  if(tradPct+rothPct>1){ const scale=1/(tradPct+rothPct); tradPct*=scale; rothPct*=scale; }
+  const tspTrad = base*tradPct;
+  const tspRoth = base*rothPct;
+  const tspAmt = tspTrad + tspRoth;
 
   // member monthly taxable income (basic + taxable specials, less traditional TSP)
-  let memberTaxMonthly = base + spTaxable;
-  if(tspTrad) memberTaxMonthly -= tspAmt;
+  let memberTaxMonthly = base + spTaxable - tspTrad;
   memberTaxMonthly = Math.max(0, memberTaxMonthly);
   // combat-zone exclusion: enlisted & warrant officers fully excluded;
   // commissioned officers capped at max enlisted pay + IDP
@@ -912,7 +931,7 @@ function calcScenario(bah, stateCode, stateExempt){
   const effRate = gross>0 ? (totalTax/gross) : 0;
   const keepPct = gross>0 ? (takeHome/gross) : 0;
 
-  return {base,bah,bas,spList,gross,fedTax,ss,medi,stateTax,tspAmt,sgli,other,
+  return {base,bah,bas,spList,gross,fedTax,ss,medi,stateTax,tspAmt,tspTrad,tspRoth,sgli,other,
     takeHome,totalTax,effRate,keepPct,stateCode,combat};
 }
 
@@ -940,7 +959,9 @@ function renderScenario(r,label,cls){
       '<div class="line neg"><span>Social Security (6.2%)</span><span class="v">−'+money(r.ss)+'</span></div>'+
       '<div class="line neg"><span>Medicare (1.45%)</span><span class="v">−'+money(r.medi)+'</span></div>'+
       '<div class="line neg"><span>State tax — '+stName+'</span><span class="v">−'+money(r.stateTax)+'</span></div>'+
-      '<div class="line neg"><span>TSP contribution</span><span class="v">−'+money(r.tspAmt)+'</span></div>'+
+      (r.tspTrad>0?'<div class="line neg"><span>TSP — Traditional</span><span class="v">−'+money(r.tspTrad)+'</span></div>':'')+
+      (r.tspRoth>0?'<div class="line neg"><span>TSP — Roth</span><span class="v">−'+money(r.tspRoth)+'</span></div>':'')+
+      ((r.tspTrad<=0&&r.tspRoth<=0)?'<div class="line neg"><span>TSP contribution</span><span class="v">−'+money(0)+'</span></div>':'')+
       '<div class="line neg"><span>SGLI</span><span class="v">−'+money2(r.sgli)+'</span></div>'+
       '<div class="line neg"><span>Other deductions</span><span class="v">−'+money(r.other)+'</span></div>'+
       '<div class="line total"><span>Estimated take-home</span><span class="v">'+money(r.takeHome)+'</span></div>'+

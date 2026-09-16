@@ -130,14 +130,15 @@ const { calcScenario, basicPay, bahLookup, STATES, SPECIALS, BAH_W, BAH_WO,
 const set = (id, v) => { app.el(id).value = String(v); };
 const chk = (id, b) => { app.el(id).checked = b; };
 function baseline() {
-  set('grade','E-5'); set('yos','4'); set('filing','single'); set('tsp','5');
-  set('tsptype','trad'); set('sgli','31'); set('other','0'); set('deps','yes');
+  set('grade','E-5'); set('yos','4'); set('filing','single');
+  set('tsp','5'); set('tspRoth','0');        // traditional / roth are separate now
+  set('sgli','26'); set('other','0'); set('deps','yes');   // $500k at the 2025 VA rate
   chk('combat', false);
   SPECIALS.forEach(s => { chk('sp_' + s[0], false); set('spamt_' + s[0], '0'); });
 }
 const exemptDefault = c => !!(STATES[c].none || STATES[c].exemptDefault);
 
-G('Golden case (E-5, 6yr, single, NC, BAH 1800, 5% traditional TSP, SGLI $31)');
+G('Golden case (E-5, 6yr, single, NC, BAH 1800, 5% traditional TSP, SGLI $26)');
 baseline();
 let r = calcScenario(1800, 'NC', false);
 eq('gross', r.gross, 6386.95);
@@ -146,7 +147,7 @@ eq('social security', r.ss, 254.82);
 eq('medicare', r.medi, 59.60);
 eq('NC state tax', r.stateTax, 113.40);
 eq('TSP', r.tspAmt, 205.50);
-eq('take-home', r.takeHome, 5435.76, 1);
+eq('take-home', r.takeHome, 5440.76, 1);   // +$5.00: SGLI corrected from $31 to $26
 ok('take-home identity', Math.abs(r.takeHome -
   (r.gross - (r.fedTax + r.ss + r.medi + r.stateTax + r.tspAmt + r.sgli + r.other))) < 0.01);
 ok('effective-rate identity', Math.abs(r.effRate -
@@ -281,10 +282,29 @@ ok('combat zone: warrant officer federal tax = 0', calcScenario(1800,'VA',false)
   ok('combat zone: senior officer pays less than at home', inZone < home);
 })();
 (() => {
-  baseline(); set('tsptype','trad'); const trad = calcScenario(2000,'VA',false);
-  baseline(); set('tsptype','roth'); const roth = calcScenario(2000,'VA',false);
+  // Traditional and Roth are separate elections that can run together.
+  baseline(); set('tsp','5');  set('tspRoth','0'); const trad = calcScenario(2000,'VA',false);
+  baseline(); set('tsp','0');  set('tspRoth','5'); const roth = calcScenario(2000,'VA',false);
   ok('traditional TSP lowers taxable income', trad.fedTax < roth.fedTax);
-  ok('both TSP types deduct from take-home', Math.abs(trad.tspAmt - roth.tspAmt) < 0.01);
+  ok('both TSP types deduct the same from take-home',
+     Math.abs(trad.tspAmt - roth.tspAmt) < 0.01);
+  ok('traditional is reported separately', trad.tspTrad > 0 && trad.tspRoth === 0);
+  ok('roth is reported separately', roth.tspRoth > 0 && roth.tspTrad === 0);
+
+  // Both at once — the case that was impossible before.
+  baseline(); set('tsp','5'); set('tspRoth','5'); const both = calcScenario(2000,'VA',false);
+  ok('both can be contributed together', both.tspTrad > 0 && both.tspRoth > 0);
+  ok('combined deduction is the sum', Math.abs(both.tspAmt - (trad.tspAmt + roth.tspAmt)) < 0.01);
+  // Adding Roth on top does not change tax: the traditional share is identical,
+  // and Roth is deducted after tax.
+  ok('adding roth does not change tax', Math.abs(both.fedTax - trad.fedTax) < 0.01);
+  ok('roth-only is taxed more than traditional-only', roth.fedTax > both.fedTax);
+
+  // Over-election must be scaled, not allowed to exceed basic pay.
+  baseline(); set('tsp','80'); set('tspRoth','80'); const over = calcScenario(2000,'VA',false);
+  ok('combined contribution cannot exceed basic pay', over.tspAmt <= over.base + 0.01);
+  ok('the split is preserved when scaled', Math.abs(over.tspTrad - over.tspRoth) < 0.01);
+  baseline();   // leave no state for the next group
 })();
 
 G('State tax engine (all 51 jurisdictions)');
@@ -362,6 +382,35 @@ G('State tax: hand-computed golden values');
     if (rate < 0 || rate > 0.09) implausible++;
   });
   ok('all state effective rates plausible at $60k', implausible === 0);
+})();
+
+G('SGLI premiums follow the published VA formula');
+(() => {
+  // VA rate from 1 Jul 2025: $0.05 per $1,000 of cover, plus $1.00 TSGLI.
+  // Both halves were wrong before: the old $0.06 rate, and a TSGLI add-on that
+  // was $1.00 on the top tier and $2.50 on every other one.
+  const RATE = 0.05, TSGLI = 1.00;
+  const block = html.match(/<select id="sgli">([\s\S]*?)<\/select>/);
+  ok('SGLI options are present', !!block);
+  const opts = [...block[1].matchAll(/<option value="([\d.]+)">\$?([\d,]+)/g)]
+    .map(m => ({ premium: parseFloat(m[1]), cover: parseInt(m[2].replace(/,/g, ''), 10) }));
+  ok('all cover tiers listed', opts.length >= 5);
+  let wrong = 0;
+  opts.forEach(o => {
+    if (!o.cover) return;                       // the "Declined" row
+    const expect = +(o.cover / 1000 * RATE + TSGLI).toFixed(2);
+    if (Math.abs(o.premium - expect) > 0.005) {
+      wrong++;
+      console.log('        $' + o.cover.toLocaleString() + ' listed at $' +
+                  o.premium.toFixed(2) + ', formula gives $' + expect.toFixed(2));
+    }
+  });
+  ok('every premium matches rate x cover + TSGLI', wrong === 0);
+  ok('max cover is $26.00', opts.some(o => o.cover === 500000 && Math.abs(o.premium - 26) < 0.005));
+  ok('declining SGLI costs nothing', /value="0">\s*Declined/.test(block[1]));
+  ok('the rate and its source are stated in the UI',
+     /0\.05 per \$1,000/.test(html) && /TSGLI/.test(html));
+  ok('tells the member where to find it on the LES', /on your LES/i.test(html));
 })();
 
 G('Currency formatting and BAH ceiling');

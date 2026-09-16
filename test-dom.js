@@ -101,6 +101,26 @@ setTimeout(() => {
   ok('special-pay amounts carry an aria-label',
      $('specials').querySelectorAll('input[type=number][aria-label]').length === 12);
 
+  G('Years of service read as ranges, not gaps');
+  (() => {
+    // Pay only changes at the DFAS breakpoints, so the raw list skips 17, 27…
+    // Shown bare that looks like missing years; each option states its range.
+    const labels = [...$('yos').options].map(o => o.textContent);
+    ok('first option covers under two years', /under 2/i.test(labels[0]));
+    ok('last option is open-ended', /over \d+/i.test(labels[labels.length - 1]));
+    ok('no bare numbers left', !labels.some(t => /^\d+$/.test(t.trim())));
+    ok('every option names years', labels.every(t => /year/i.test(t)));
+    // the 16 -> 18 jump she noticed must now be explicit
+    ok('the 16 to 18 jump is spelled out', labels.some(t => /16.?17 years/i.test(t)));
+    ok('ranges are contiguous', !labels.some((t, i) => {
+      if (i === 0 || i === labels.length - 1) return false;
+      const start = parseInt(t, 10);
+      const prev = labels[i - 1];
+      const prevEnd = /[–-](\d+)/.test(prev) ? +RegExp.$1 : parseInt(prev, 10);
+      return Number.isFinite(prevEnd) && Number.isFinite(start) && start !== prevEnd + 1;
+    }));
+  })();
+
   G('Initial render');
   ok('results render on load', $('results').innerHTML.length > 300);
   eq('two comparison cards', cards().length, 2);
