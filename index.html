@@ -729,7 +729,11 @@ function applyZip(scn){
   // shared link still restores a station. CCG areas are not in the list.
   const sel=$("station"+scn);
   if(sel && !sel.disabled){ sel.value=[...sel.options].some(o=>o.value===mha)?mha:""; }
-  setNote("Matched "+(name||mha)+".","zip-ok");
+  // Never echo "COUNTY COST GROUP nnn" back at the member — it is DFAS
+  // bookkeeping for rural counties and means nothing to them. It was taken out
+  // of the dropdown for that reason; naming it here would put it straight back.
+  const friendly = (name && !CCG_RE.test(name)) ? name : null;
+  setNote(friendly ? ("Matched "+friendly+".") : ("Rate found for ZIP "+raw+"."),"zip-ok");
 }
 if(ZIP_OK){
   ["A","B"].forEach(scn=>{

@@ -323,6 +323,29 @@ setTimeout(() => {
     ok('cost-group areas are still reachable by ZIP (' + reachable.length + '/' + ccgCodes.length + ')',
        reachable.length === ccgCodes.length);
 
+    // ...but their DFAS label must never be shown. Removing it from the
+    // dropdown and then echoing it in the ZIP confirmation would undo the fix.
+    (() => {
+      // find a ZIP that resolves to a cost-group area
+      const packed = zd.ZIP_PACK.split(' ');
+      const ccgIdx = new Set(ccgCodes.map(c => dictIdx.get(c)).filter(i => i !== undefined));
+      let cur = 0, ccgZip = null;
+      for (const rec of packed) {
+        const p = rec.split('.');
+        cur += parseInt(p[0], 36);
+        if (ccgIdx.has(parseInt(p[p.length - 1], 36))) { ccgZip = cur; break; }
+      }
+      ok('a cost-group ZIP exists to test', ccgZip !== null);
+      if (ccgZip !== null) {
+        $('byZipA').click();
+        $('zipA').value = String(ccgZip).padStart(5, '0'); fire($('zipA'), 'input');
+        const note = $('zipNoteA').textContent;
+        ok('the rate is still found', Number($('bahA').value) > 0);
+        ok('no DFAS cost-group jargon is shown', !/COUNTY COST GROUP/i.test(note));
+        ok('it confirms the ZIP instead', /ZIP\s*\d{5}/i.test(note));
+      }
+    })();
+
     // A ZIP-based share link must reopen on the ZIP tab. Otherwise a cost-group
     // area — which has no dropdown entry — reopens with a blank station, and
     // changing grade afterwards leaves the old rate in place.
