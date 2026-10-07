@@ -254,16 +254,22 @@ Written before a period of leave, so whoever picks this up is not starting from
 an empty room. Nothing here is broken; these are decisions and unfinished
 verification, ordered by what bites first.
 
+*Updated October 7, 2026. Items 1 and 5 are now done; item 2 changed shape.*
+
 **Needs a person, not a code change**
 
-1. **Default branch is wrong on both repos.** It points at
-   `copilot/connect-to-moeinis-github-repos`. Pages serves `main`, so the site is
-   fine, but anyone who clones lands on a branch missing months of work. Two
-   clicks in each repo's settings.
-2. **Custom domain.** `DNS-REQUEST.md` has the CNAME request ready. This is on
-   the critical path: the site is on a `github.io` address, and every week it
-   stays there while being promoted is ranking equity accruing to GitHub.
-   Settle the domain *before* anyone pushes for search indexing.
+1. ~~Default branch wrong on both repos.~~ **Done** — both now point at `main`.
+2. **Custom domain — the question changed.** Marketing now intends the tool to
+   live either on a simple domain of its own *or* as a post in the finance and
+   benefits content hub (URL still under construction, Josh Peitt owns it).
+   Those are different builds, so `DNS-REQUEST.md` is **on hold**, not ready to
+   send: it assumes a CNAME to GitHub Pages, which only fits the first option.
+     - *Subdomain:* one CNAME, nothing else changes.
+     - *Embed in the hub:* the hub page ranks, this page runs underneath. When
+       this is chosen, **the github.io page must stop competing with the hub
+       URL** — set `rel=canonical` to the hub URL, or `noindex`. One line, and
+       much cheaper than untangling two pages ranking for the same query later.
+     - *Rebuild in the CMS:* gives up the test suite and the deploy path. Avoid.
 3. **Annual update ownership.** The January refresh is documented but unassigned.
 
 **Unfinished verification**
@@ -272,12 +278,14 @@ verification, ordered by what bites first.
    diving 340, hardship duty 150, SDAP 450, FSA 250, HFP/IDP 225. Two of the
    five that *were* checked turned out wrong, so treat the remaining six as
    suspect rather than fine. DoD FMR 7000.14-R Volume 7A is the source.
-5. **Live special-pay defaults unconfirmed in the browser.** The values were
-   verified in the repo at commit `614dbdc`; nobody has yet loaded the live page
-   and confirmed Career sea pay reads 750 rather than 805.
+5. ~~Live special-pay defaults unconfirmed.~~ **Done** — fetched from the live
+   page October 7: sea pay 750, submarine 950, both serving correctly.
 6. **One LES, not many.** Every reconciliation claim in this file rests on a
    single O-3 Navy statement. A second and third, ideally enlisted and with a
    Traditional TSP election, would test paths that one statement never touched.
+7. **No overseas LES has ever been tested.** The OHA mode is argued from the
+   DoD rules, not checked against a real overseas pay statement. It is the
+   newest code in the app and the least evidenced. Get one.
 
 **Open design questions** (see the LES reconciliation section above for detail)
 
