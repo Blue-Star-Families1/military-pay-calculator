@@ -257,7 +257,7 @@
       <input type="checkbox" id="compareOn" checked>
       <label for="compareOn">Compare two duty stations (a move)</label>
     </div>
-    <p class="sub">Enter each location's monthly BAH and the state of legal residence (for taxes). BAS is added automatically.</p>
+    <p class="sub">Enter each location's monthly BAH — or OHA if you are stationed overseas — and the state of legal residence (for taxes). BAS is added automatically.</p>
     <div class="scenarios">
       <div class="scn a">
         <h3><span class="dot a"></span>Scenario A (current)</h3>
@@ -266,9 +266,10 @@
           <input type="text" id="labelA" placeholder="e.g., Fort Bragg, NC">
         </div>
         <div style="margin-bottom:12px">
-          <div class="lookup-switch" role="group" aria-label="Find BAH by">
+          <div class="lookup-switch" role="group" aria-label="Find housing allowance by">
             <button type="button" class="lk on" id="byStationA" data-mode="station" data-scn="A" aria-pressed="true">Duty station</button>
             <button type="button" class="lk" id="byZipA" data-mode="zip" data-scn="A" aria-pressed="false">ZIP code</button>
+            <button type="button" class="lk" id="byOhaA" data-mode="oha" data-scn="A" aria-pressed="false">Overseas (OHA)</button>
           </div>
           <div id="stationWrapA">
             <label for="stationA">Duty station (BAH area)</label>
@@ -280,11 +281,14 @@
             <input type="text" id="zipA" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="e.g., 92134">
             <div class="hint" id="zipNoteA">Use the ZIP where you are living — helpful if your home of record is away from your duty station.</div>
           </div>
+          <div id="ohaWrapA" hidden>
+            <div class="hint">Overseas, <strong>OHA replaces BAH</strong>. OHA reimburses your actual rent up to a ceiling set for your location and grade, so there is no table to look it up in — two members in the same building can draw different amounts. Take the figure from your LES.</div>
+          </div>
         </div>
         <div style="margin-bottom:12px">
-          <label for="bahA">Monthly BAH ($)</label>
+          <label for="bahA" id="bahLabelA">Monthly BAH ($)</label>
           <input type="number" id="bahA" value="1800" min="0" step="1">
-          <div class="hint">Auto-fills from your duty station or ZIP, plus grade and dependents. You can override it.</div>
+          <div class="hint" id="bahHintA">Auto-fills from your duty station or ZIP, plus grade and dependents. You can override it.</div>
         </div>
         <div>
           <label for="stateA">State of legal residence</label>
@@ -304,9 +308,10 @@
           <input type="text" id="labelB" placeholder="e.g., San Diego, CA">
         </div>
         <div style="margin-bottom:12px">
-          <div class="lookup-switch" role="group" aria-label="Find BAH by">
+          <div class="lookup-switch" role="group" aria-label="Find housing allowance by">
             <button type="button" class="lk on" id="byStationB" data-mode="station" data-scn="B" aria-pressed="true">Duty station</button>
             <button type="button" class="lk" id="byZipB" data-mode="zip" data-scn="B" aria-pressed="false">ZIP code</button>
+            <button type="button" class="lk" id="byOhaB" data-mode="oha" data-scn="B" aria-pressed="false">Overseas (OHA)</button>
           </div>
           <div id="stationWrapB">
             <label for="stationB">Duty station (BAH area)</label>
@@ -318,11 +323,14 @@
             <input type="text" id="zipB" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="e.g., 28307">
             <div class="hint" id="zipNoteB">Use the ZIP where you would be living at the new location.</div>
           </div>
+          <div id="ohaWrapB" hidden>
+            <div class="hint">Overseas, <strong>OHA replaces BAH</strong>. It reimburses actual rent up to a ceiling for the location and grade, so it cannot be looked up in advance. For a PCS you have not made yet, the DoD OHA rate lookup gives the ceiling — treat it as a best case, not a promise.</div>
+          </div>
         </div>
         <div style="margin-bottom:12px">
-          <label for="bahB">Monthly BAH ($)</label>
+          <label for="bahB" id="bahLabelB">Monthly BAH ($)</label>
           <input type="number" id="bahB" value="3300" min="0" step="1">
-          <div class="hint">Auto-fills from your duty station or ZIP, plus grade and dependents. You can override it.</div>
+          <div class="hint" id="bahHintB">Auto-fills from your duty station or ZIP, plus grade and dependents. You can override it.</div>
         </div>
         <div>
           <label for="stateB">State of legal residence</label>
@@ -349,7 +357,7 @@
     <div class="diff" id="diffBox"></div>
     <p class="sr-only" id="srStatus" role="status" aria-live="polite" aria-atomic="true"></p>
     <div class="disclaimer">
-      <strong>Estimate only.</strong> Models 2026 base pay (incl. Executive Schedule caps), BAS, federal tax, FICA (with the Additional Medicare Tax), and state income tax using real 2026 brackets &amp; standard deductions, and combat-zone exclusion (enlisted &amp; warrant officers fully excluded; commissioned officers capped at max enlisted pay + IDP). BAH auto-fills from official 2026 DoD (DTMO) rates by duty station, grade, and dependents — override anytime. State tax credits, itemized deductions, and local taxes outside Maryland are not modeled. Drill and annual-training pay for non-mobilized Guard and Reserve members is not modeled, and some states tax Guard pay differently from active-duty pay. Verify with your finance office / MyPay before making financial decisions.
+      <strong>Estimate only.</strong> Models 2026 base pay (incl. Executive Schedule caps), BAS, federal tax, FICA (with the Additional Medicare Tax), and state income tax using real 2026 brackets &amp; standard deductions, and combat-zone exclusion (enlisted &amp; warrant officers fully excluded; commissioned officers capped at max enlisted pay + IDP). BAH auto-fills from official 2026 DoD (DTMO) rates by duty station, grade, and dependents — override anytime. Overseas, OHA replaces BAH and is entered manually, because it reimburses your actual rent up to a ceiling and cannot be derived from grade and location. State tax credits, itemized deductions, and local taxes outside Maryland are not modeled. Drill and annual-training pay for non-mobilized Guard and Reserve members is not modeled, and some states tax Guard pay differently from active-duty pay. Verify with your finance office / MyPay before making financial decisions.
     </div>
   </div>
 
@@ -812,38 +820,68 @@ if(ZIP_OK){
     const zi=$("zip"+scn);
     if(zi) zi.addEventListener("input",()=>{applyZip(scn);calculate();});
   });
-  function setLookupMode(scn,mode,focus){
-    const zipMode=mode==="zip";
-    $("stationWrap"+scn).hidden=zipMode;
-    $("zipWrap"+scn).hidden=!zipMode;
-    if($("mode"+scn)) $("mode"+scn).value=zipMode?"zip":"station";
-    document.querySelectorAll('.lookup-switch .lk[data-scn="'+scn+'"]').forEach(b=>{
-      const on=b.getAttribute("data-mode")===(zipMode?"zip":"station");
-      b.classList.toggle("on",on);
-      b.setAttribute("aria-pressed",String(on));
-    });
-    if(zipMode&&focus) $("zip"+scn).focus();
-  }
-  document.querySelectorAll(".lookup-switch .lk").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      setLookupMode(btn.getAttribute("data-scn"),btn.getAttribute("data-mode"),true);
-    });
-  });
-  // Exposed so it can run after applyState() has read the URL — see below.
-  window.__restoreLookupModes=function(){
-    ["A","B"].forEach(scn=>{
-      const m=$("mode"+scn);
-      if(m && m.value==="zip"){ setLookupMode(scn,"zip",false); if($("zip"+scn).value) applyZip(scn); }
-    });
-  };
 } else {
-  // No ZIP table shipped: hide the switch rather than offer a control that
-  // cannot work, and leave the duty-station dropdown as the only path.
-  document.querySelectorAll(".lookup-switch").forEach(el=>{ el.hidden=true; });
+  // No ZIP table shipped: drop just the ZIP button rather than the whole
+  // switch. Duty station and OHA still work without it.
+  document.querySelectorAll('.lookup-switch .lk[data-mode="zip"]').forEach(b=>{ b.hidden=true; });
 }
 
+/* Three ways to fill the housing allowance.
+
+   OHA is deliberately NOT a lookup. It reimburses the member's actual rent up
+   to a ceiling set per location and grade, so two members in the same building
+   can draw different amounts and no table can produce the right number from
+   grade and location alone (travel.dod.mil, Overseas Housing Allowance). The
+   mode therefore changes only labels and guidance — the arithmetic is
+   untouched, because OHA and BAH are both non-taxable housing allowances and
+   the engine already treats this field as "monthly non-taxable housing". */
+function setLookupMode(scn,mode,focus){
+  if(mode!=="zip" && mode!=="oha") mode="station";
+  if(mode==="zip" && !ZIP_OK) mode="station";
+  const sw=$("stationWrap"+scn), zw=$("zipWrap"+scn), ow=$("ohaWrap"+scn);
+  if(sw) sw.hidden = mode!=="station";
+  if(zw) zw.hidden = mode!=="zip";
+  if(ow) ow.hidden = mode!=="oha";
+  if($("mode"+scn)) $("mode"+scn).value=mode;
+  document.querySelectorAll('.lookup-switch .lk[data-scn="'+scn+'"]').forEach(b=>{
+    const on=b.getAttribute("data-mode")===mode;
+    b.classList.toggle("on",on);
+    b.setAttribute("aria-pressed",String(on));
+  });
+  const lbl=$("bahLabel"+scn), hint=$("bahHint"+scn);
+  if(lbl) lbl.textContent = mode==="oha" ? "Monthly OHA — rent + utilities ($)" : "Monthly BAH ($)";
+  if(hint) hint.textContent = mode==="oha"
+    ? "Rent plus the utility and recurring maintenance allowance, as they appear on your LES. Leave MIHA out — it is a one-time move-in payment, not monthly."
+    : "Auto-fills from your duty station or ZIP, plus grade and dependents. You can override it.";
+  if(focus){
+    if(mode==="zip") $("zip"+scn).focus();
+    // Switching to OHA must not leave a CONUS rate sitting under an OHA label —
+    // same failure as the stale BAH after a failed ZIP lookup.
+    if(mode==="oha"){ $("bah"+scn).value="0"; $("bah"+scn).focus(); }
+  }
+}
+document.querySelectorAll(".lookup-switch .lk").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    setLookupMode(btn.getAttribute("data-scn"),btn.getAttribute("data-mode"),true);
+    calculate();
+  });
+});
+// Exposed so it can run after applyState() has read the URL — see below.
+window.__restoreLookupModes=function(){
+  ["A","B"].forEach(scn=>{
+    const m=$("mode"+scn);
+    if(!m) return;
+    if(m.value==="zip" && ZIP_OK){ setLookupMode(scn,"zip",false); if($("zip"+scn).value) applyZip(scn); }
+    else if(m.value==="oha"){ setLookupMode(scn,"oha",false); }
+  });
+};
+
+const inOha = scn => { const m=$("mode"+scn); return !!m && m.value==="oha"; };
 ["grade","deps"].forEach(id=>$(id).addEventListener("change",()=>{
-  applyBah("stationA","bahA");applyBah("stationB","bahB");
+  // An OHA amount is typed off the member's own LES. Nothing about a grade or
+  // dependents change entitles us to overwrite it with a CONUS table rate.
+  if(!inOha("A")) applyBah("stationA","bahA");
+  if(!inOha("B")) applyBah("stationB","bahB");
   // a ZIP-selected area must re-price when grade or dependents change
   ["A","B"].forEach(scn=>{ if($("zipWrap"+scn)&&!$("zipWrap"+scn).hidden&&$("zip"+scn).value) applyZip(scn); });
   calculate();
@@ -1010,7 +1048,7 @@ function renderScenario(r,label,cls){
       '<div class="amt">'+money(r.takeHome)+'</div><div class="yr">'+money(r.takeHome*12)+' / year</div></div>'+
     '<div class="res-body">'+
       '<div class="line"><span>Basic pay</span><span class="v">'+money(r.base)+'</span></div>'+
-      '<div class="line"><span>BAH (housing)</span><span class="v">'+money(r.bah)+'</span></div>'+
+      '<div class="line"><span>BAH / OHA (housing)</span><span class="v">'+money(r.bah)+'</span></div>'+
       '<div class="line"><span>BAS (subsistence)</span><span class="v">'+money(r.bas)+'</span></div>'+
       sp+
       '<div class="line gross"><span>Gross monthly pay</span><span class="v">'+money(r.gross)+'</span></div>'+

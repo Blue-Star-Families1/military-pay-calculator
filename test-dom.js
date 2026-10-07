@@ -394,6 +394,67 @@ setTimeout(() => {
     $('zipA').value = '';
   })();
 
+  G('Overseas housing allowance (OHA)');
+  (() => {
+    // OHA reimburses actual rent up to a per-location ceiling, so it cannot be
+    // auto-filled. The mode exists to relabel and to stop an overseas member
+    // reading "BAH" and assuming the tool does not cover them.
+    ok('an OHA mode is offered', !!$('byOhaA') && $('byOhaA').hidden === false);
+
+    $('grade').value = 'E-6'; fire($('grade'), 'change');
+    $('deps').value = 'yes'; fire($('deps'), 'change');
+    $('stationA').value = 'CA038'; fire($('stationA'), 'change');
+    const conus = Number($('bahA').value);
+    ok('a CONUS rate is in the field first', conus > 0);
+
+    $('byOhaA').click();
+    ok('choosing OHA reveals its guidance', $('ohaWrapA').hidden === false);
+    ok('and hides the station picker', $('stationWrapA').hidden === true);
+    ok('and hides the ZIP field', $('zipWrapA').hidden === true);
+    eq('OHA button reports pressed', $('byOhaA').getAttribute('aria-pressed'), 'true');
+    eq('mode is recorded for sharing', $('modeA').value, 'oha');
+
+    // The bug this prevents: a San Diego rate sitting under an "OHA" label.
+    eq('switching to OHA clears the CONUS rate', Number($('bahA').value), 0);
+    ok('the amount field is relabelled', /OHA/.test($('bahLabelA').textContent));
+    ok('the hint stops promising an auto-fill', !/Auto-fills/i.test($('bahHintA').textContent));
+    ok('MIHA is explicitly excluded', /MIHA/.test($('bahHintA').textContent));
+
+    // Changing grade or dependents must not overwrite a hand-entered OHA.
+    $('bahA').value = '2750'; fire($('bahA'), 'input');
+    $('grade').value = 'E-7'; fire($('grade'), 'change');
+    eq('a grade change leaves OHA alone', Number($('bahA').value), 2750);
+    $('deps').value = 'no'; fire($('deps'), 'change');
+    eq('a dependants change leaves OHA alone', Number($('bahA').value), 2750);
+
+    // OHA is non-taxable housing, exactly like BAH — same arithmetic.
+    (() => {
+      const r = w.calcScenario(2750, 'TX', false);
+      eq('OHA reaches gross pay', Math.round(r.bah), 2750);
+      const noHousing = w.calcScenario(0, 'TX', false);
+      eq('and is not taxed', Math.round(r.fedTax), Math.round(noHousing.fedTax));
+    })();
+
+    ok('results name both allowances', /BAH \/ OHA/.test($('results').innerHTML));
+
+    // A shared OHA link must reopen in OHA mode, or the recipient sees a
+    // hand-typed overseas figure labelled as a CONUS BAH.
+    (() => {
+      const q = w.collectState();
+      ok('share link carries the OHA mode', /modeA=oha/.test(q));
+      const d5 = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true,
+        url: URL_ + '?modeA=oha&bahA=2750&grade=E-7&deps=no', virtualConsole: vc });
+      const g5 = id => d5.window.document.getElementById(id);
+      ok('an OHA link reopens in OHA mode', g5('ohaWrapA').hidden === false);
+      ok('and keeps the shared amount', Number(g5('bahA').value) === 2750);
+      ok('and keeps the OHA label', /OHA/.test(g5('bahLabelA').textContent));
+    })();
+
+    $('byStationA').click();
+    $('grade').value = 'E-5'; fire($('grade'), 'change');
+    $('deps').value = 'yes'; fire($('deps'), 'change');
+  })();
+
   G('Feedback context line');
   (() => {
     // When feedback leaves the page, the auto-filled grade/station/state have

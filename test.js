@@ -44,9 +44,13 @@ function boot(opts) {
       id, value: '', checked: false, disabled: false,
       type: (id.startsWith('sp_') || CHECKBOXES.includes(id)) ? 'checkbox' : 'text',
       options: [{ textContent: '— choose to auto-fill BAH —' }],
-      style: {}, classList: { toggle() {} },
+      style: {}, classList: { toggle() {} }, hidden: false,
       addEventListener(ev, cb) { (handlers[id] = handlers[id] || []).push(cb); },
       appendChild(o) { (opted[id] = opted[id] || []).push(o.value); },
+      // This stub ignores selectors — querySelectorAll hands back every element
+      // — so anything the page calls on a queried node has to exist here or the
+      // whole file dies at load. getAttribute arrived with the OHA lookup mode.
+      getAttribute() { return null; },
       setAttribute() {}, select() {}, setSelectionRange() {},
       set innerHTML(v) { writes[id] = v; }, get innerHTML() { return writes[id] || ''; },
       set textContent(v) { this._t = v; }, get textContent() { return this._t || ''; }

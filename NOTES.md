@@ -291,7 +291,15 @@ regressions. It cannot tell you a number was wrong the day it was typed in.
 
 ## Known limitations (intentional)
 
-- BAH covers CONUS, Alaska, and Hawaii only. OCONUS/overseas uses OHA (not modeled) — the manual BAH field covers those.
+- BAH covers CONUS, Alaska, and Hawaii only. Overseas is OHA, which now has its
+  own mode on the lookup switch. **OHA is not auto-filled and should not be.**
+  It reimburses the member's actual rent up to a per-location, per-grade ceiling
+  (travel.dod.mil, Overseas Housing Allowance), so two members in the same
+  building can draw different amounts and no table can produce the right figure
+  from grade and location. The mode changes labels and guidance only; the
+  arithmetic is identical, because OHA and BAH are both non-taxable housing
+  allowances. MIHA is deliberately excluded — it is a one-time move-in payment,
+  not monthly, and folding it in would overstate every month of the year.
 - State tax credits (CTC, EITC), itemized deductions, and local income taxes outside Maryland are not modeled.
 - The `XX499 = "UNKNOWN, NA"` placeholder area in the DTMO data is filtered out of the station dropdown.
 
