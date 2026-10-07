@@ -100,12 +100,17 @@ setTimeout(() => {
   // count comes from the data, so adding a pay does not break the test
   (() => {
     const declared = (html.match(/const SPECIALS\s*=\s*\[([\s\S]*?)\n\];/) || [])[1] || '';
-    const n = (declared.match(/^\s*\["/gm) || []).length;
+    const rows = declared.match(/^\s*\["[\s\S]*?\],?$/gm) || [];
+    const n = rows.length;
+    // Per-scenario pays (COLA) render a second amount box, so the expected
+    // number of boxes is derived rather than assumed equal to the row count.
+    const perScn = rows.filter(r => /,\s*(true|false)\s*,\s*true\s*\]/.test(r)).length;
     ok('special pays are declared', n > 0);
+    ok('some pays are per-scenario', perScn > 0);
     eq('a row per declared special pay',
        $('specials').querySelectorAll('input[type=checkbox]').length, n);
     eq('every amount box carries an aria-label',
-       $('specials').querySelectorAll('input[type=number][aria-label]').length, n);
+       $('specials').querySelectorAll('input[type=number][aria-label]').length, n + perScn);
   })();
 
   G('Years of service read as ranges, not gaps');

@@ -90,6 +90,17 @@
   .dot{width:11px;height:11px;border-radius:50%} .dot.a{background:var(--steel)} .dot.b{background:var(--gold)}
   .specials{display:grid;gap:8px}
   .sp-row{display:grid;grid-template-columns:22px 1fr 108px;align-items:center;gap:8px}
+  /* A per-scenario pay (COLA) adds a second amount box. The column only exists
+     while comparing, so the grid widens rather than squeezing the label. */
+  .specials.compare .sp-row{grid-template-columns:22px 1fr 108px 108px}
+  .specials.compare .sp-row>.sp-b{grid-column:4}
+  .sp-scn-head{display:grid;grid-template-columns:22px 1fr 108px 108px;gap:8px;
+    font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:4px}
+  .sp-scn-head span:nth-child(3),.sp-scn-head span:nth-child(4){text-align:center}
+  @media(max-width:640px){
+    .specials.compare .sp-row{grid-template-columns:22px 1fr 84px 84px}
+    .sp-scn-head{grid-template-columns:22px 1fr 84px 84px}
+  }
   .sp-row input[type=number]{padding:7px 8px;font-size:14px}
   .sp-row label{margin:0;text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink);font-size:13px}
   .toggle-row{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px}
@@ -254,6 +265,8 @@
   <div class="card">
     <h2>Special &amp; incentive pays</h2>
     <p class="sub">Check any that apply and adjust the monthly amount. Defaults are common 2026 maximums; your amount may differ by service and qualification, so the surest figures are the ones on your LES. Rows marked <em style="color:var(--good)">(non-taxable)</em> are excluded from income tax — everything else is taxed.</p>
+    <div class="hint" id="spScnNote" hidden><strong>COLA is paid for where you are</strong>, so it gets its own amount for each scenario. The second box is what you expect at the new station — often $0. Every other pay here follows you.</div>
+    <div class="sp-scn-head" id="spScnHead" hidden><span></span><span></span><span>Current</span><span>New station</span></div>
     <div class="specials" id="specials"></div>
   </div>
 
@@ -564,8 +577,14 @@ const SPECIALS = [
   // differently, so they are separate rows rather than one amount.
   // Defaults are 0: the rate varies by location, grade, years and dependents,
   // and the member can read the exact figure off their LES.
-  ["conuscola","CONUS COLA — high-cost U.S. areas",0,true],
-  ["oconuscola","Overseas COLA (OCONUS)",0,false],
+  /* COLA carries a 5th flag: it is per-scenario. Every other special pay
+     follows the member, but COLA is paid *because of where you are*, so
+     carrying scenario A's figure into scenario B silently prices a move at the
+     old location's cost of living. A tester comparing a move out of Berkeley
+     watched her current CONUS COLA follow her to the new station, which is the
+     one thing the compare view exists to get right. */
+  ["conuscola","CONUS COLA — high-cost U.S. areas",0,true,true],
+  ["oconuscola","Overseas COLA (OCONUS)",0,false,true],
   ["custom","Other special pay (taxable)",0,true]
 ];
 
@@ -893,13 +912,26 @@ const inOha = scn => { const m=$("mode"+scn); return !!m && m.value==="oha"; };
 }));
 
 const spWrap=$("specials");
-SPECIALS.forEach(([key,label,amt,tax])=>{
+SPECIALS.forEach(([key,label,amt,tax,perScn])=>{
   const row=document.createElement("div");row.className="sp-row";
   row.innerHTML='<input type="checkbox" id="sp_'+key+'">'+
     '<label for="sp_'+key+'">'+label+(tax?"":' <em style="color:var(--good)">(non-taxable)</em>')+'</label>'+
-    '<input type="number" id="spamt_'+key+'" value="'+amt+'" min="0" step="1" aria-label="'+esc(label)+' monthly amount in dollars">';
+    '<input type="number" id="spamt_'+key+'" value="'+amt+'" min="0" step="1" aria-label="'+esc(label)+(perScn?' monthly amount at the current station, in dollars':' monthly amount in dollars')+'">'+
+    (perScn?'<input type="number" class="sp-b" id="spamtB_'+key+'" value="0" min="0" step="1" hidden aria-label="'+esc(label)+' monthly amount at the new station, in dollars">':'');
   spWrap.appendChild(row);
 });
+/* The per-scenario amounts are meaningless until there is a second scenario to
+   compare against, so they stay hidden until the compare switch is on. */
+function syncPerScenarioSpecials(){
+  const on=$("compareOn").checked;
+  SPECIALS.forEach(([key,,,,perScn])=>{
+    if(!perScn) return;
+    const b=$("spamtB_"+key); if(b) b.hidden=!on;
+  });
+  const n=$("spScnNote"); if(n) n.hidden=!on;
+  const h=$("spScnHead"); if(h) h.hidden=!on;
+  if(spWrap && spWrap.classList) spWrap.classList.toggle("compare",on);
+}
 
 function stateNote(code){
   const s=STATES[code];
@@ -922,8 +954,10 @@ syncStateNote("stateB","exemptB","stateNoteB");
 
 $("compareOn").addEventListener("change",()=>{
   $("scnB").classList.toggle("hidden",!$("compareOn").checked);
+  syncPerScenarioSpecials();
   calculate();
 });
+syncPerScenarioSpecials();
 
 function basicPay(grade,yosIdx){
   const row=PAY[grade];if(!row)return 0;
@@ -964,7 +998,7 @@ function fedTaxOnAnnual(annualTaxable, filing){
   return tax;
 }
 
-function calcScenario(bah, stateCode, stateExempt){
+function calcScenario(bah, stateCode, stateExempt, scn){
   const grade=$("grade").value;
   let yosIdx=Math.round(num("yos",0,YOS_LABELS.length-1));
   let filing=$("filing").value; if(!BRACKETS[filing]) filing="single";
@@ -973,10 +1007,17 @@ function calcScenario(bah, stateCode, stateExempt){
   const base=basicPay(grade,yosIdx);
   const bas=isOfficer?BAS_OFF:BAS_ENL;
 
+  /* Scenario B reads its own amount for per-scenario pays (COLA). It falls back
+     to the shared field only when the B input is absent, never when it is
+     simply zero — zero is a legitimate answer, and the whole point is that a
+     member moving out of a high-COLA area should be able to say "none there". */
+  const useB = scn==="B";
   let spTaxable=0, spNontax=0, spList=[];
-  SPECIALS.forEach(([key,label,,tax])=>{
+  SPECIALS.forEach(([key,label,,tax,perScn])=>{
     if($("sp_"+key).checked){
-      const amt=num("spamt_"+key,0);
+      const bId="spamtB_"+key;
+      const id=(useB && perScn && $(bId)) ? bId : "spamt_"+key;
+      const amt=num(id,0);
       if(amt>0){ spList.push([label,amt]); tax?spTaxable+=amt:spNontax+=amt; }
     }
   });
@@ -1102,10 +1143,10 @@ function announce(rA,rB){
 
 function calculate(){
   const compare=$("compareOn").checked;
-  const rA=calcScenario(num("bahA",0,BAH_MAX),$("stateA").value,$("exemptA").checked);
+  const rA=calcScenario(num("bahA",0,BAH_MAX),$("stateA").value,$("exemptA").checked,"A");
   let html=renderScenario(rA,$("labelA").value||"Scenario A","a");
   if(compare){
-    const rB=calcScenario(num("bahB",0,BAH_MAX),$("stateB").value,$("exemptB").checked);
+    const rB=calcScenario(num("bahB",0,BAH_MAX),$("stateB").value,$("exemptB").checked,"B");
     html+=renderScenario(rB,$("labelB").value||"Scenario B","b");
     if($("results").classList) $("results").classList.toggle("single",false);
     $("results").innerHTML=html;

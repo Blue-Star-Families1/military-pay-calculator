@@ -141,7 +141,10 @@ function baseline() {
   set('sgli','26'); set('other','0'); set('deps','yes');   // $500k at the 2025 VA rate
   set('addlFed','0');
   chk('combat', false);
-  SPECIALS.forEach(s => { chk('sp_' + s[0], false); set('spamt_' + s[0], '0'); });
+  SPECIALS.forEach(s => {
+    chk('sp_' + s[0], false); set('spamt_' + s[0], '0');
+    if (s[4]) set('spamtB_' + s[0], '0');     // per-scenario pays (COLA)
+  });
 }
 const exemptDefault = c => !!(STATES[c].none || STATES[c].exemptDefault);
 
@@ -357,6 +360,51 @@ ok('combat zone: warrant officer federal tax = 0', calcScenario(1800,'VA',false)
   ok('combined contribution cannot exceed basic pay', over.tspAmt <= over.base + 0.01);
   ok('the split is preserved when scaled', Math.abs(over.tspTrad - over.tspRoth) < 0.01);
   baseline();   // leave no state for the next group
+})();
+
+G('COLA is per scenario, every other special pay is not');
+(() => {
+  // Reported by a tester comparing a move out of a high-COLA area: her current
+  // CONUS COLA followed her to the new station. COLA is paid for where you are,
+  // so carrying it across is the one error the compare view cannot afford.
+  // eq() compares numerically — use ok() for strings. This exact slip has now
+  // cost two debugging rounds on this project.
+  const perScn = SPECIALS.filter(s => s[4]).map(s => s[0]);
+  ok('exactly the two COLA rows are per-scenario (' + perScn.join(',') + ')',
+     perScn.join(',') === 'conuscola,oconuscola');
+
+  baseline(); chk('sp_conuscola', true);
+  set('spamt_conuscola', '400'); set('spamtB_conuscola', '0');
+  const a = calcScenario(1800, 'TX', false, 'A');
+  const b = calcScenario(1800, 'TX', false, 'B');
+  eq('scenario A uses the current-station amount', a.gross - b.gross, 400, 0.01);
+  ok('scenario B drops a COLA that does not exist there',
+     !b.spList.some(([l]) => /COLA/i.test(l)));
+
+  // Zero in B must mean zero, not "fall back to A" — that was the bug.
+  set('spamtB_conuscola', '150');
+  const b2 = calcScenario(1800, 'TX', false, 'B');
+  eq('scenario B uses its own amount when given one', b2.gross - a.gross, -250, 0.01);
+
+  // Defaulting matters: an omitted scenario argument must behave like A, or
+  // every existing caller silently switches meaning.
+  const noArg = calcScenario(1800, 'TX', false);
+  eq('an omitted scenario argument behaves as A', noArg.gross, a.gross, 0.01);
+
+  // Non-COLA pays must still follow the member across the move.
+  baseline(); chk('sp_seapay', true); set('spamt_seapay', '500');
+  const sa = calcScenario(1800, 'TX', false, 'A');
+  const sb = calcScenario(1800, 'TX', false, 'B');
+  eq('sea pay follows the member into scenario B', sb.gross, sa.gross, 0.01);
+
+  // Taxability must survive the split: CONUS COLA taxable, OCONUS not.
+  baseline(); chk('sp_oconuscola', true);
+  set('spamt_oconuscola', '0'); set('spamtB_oconuscola', '600');
+  const ob = calcScenario(1800, 'TX', false, 'B');
+  const obNone = calcScenario(1800, 'TX', false, 'A');
+  eq('OCONUS COLA reaches scenario B gross', ob.gross - obNone.gross, 600, 0.01);
+  eq('and is still untaxed there', ob.fedTax, obNone.fedTax, 0.01);
+  baseline();
 })();
 
 G('Extra federal withholding (W-4 Step 4c)');
