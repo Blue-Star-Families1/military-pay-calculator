@@ -19,7 +19,7 @@ const html = fs.readFileSync(path.join(DIR, 'index.html'), 'utf8');
 const bahSrc = fs.readFileSync(path.join(DIR, 'bah-data.js'), 'utf8');
 
 // ---------------------------------------------------------------- harness ---
-const IDS = ['grade','yos','filing','tsp','tsptype','sgli','other','deps','combat',
+const IDS = ['grade','yos','filing','tsp','tsptype','sgli','other','deps','combat','addlFed',
   'bahA','bahB','stateA','stateB','labelA','labelB','compareOn','stationA','stationB',
   'exemptA','exemptB','stateNoteA','stateNoteB','results','diffBox','specials',
   'sources','printBtn','shareBtn','scnB','srStatus'];
@@ -139,6 +139,7 @@ function baseline() {
   set('grade','E-5'); set('yos','4'); set('filing','single');
   set('tsp','5'); set('tspRoth','0');        // traditional / roth are separate now
   set('sgli','26'); set('other','0'); set('deps','yes');   // $500k at the 2025 VA rate
+  set('addlFed','0');
   chk('combat', false);
   SPECIALS.forEach(s => { chk('sp_' + s[0], false); set('spamt_' + s[0], '0'); });
 }
@@ -356,6 +357,36 @@ ok('combat zone: warrant officer federal tax = 0', calcScenario(1800,'VA',false)
   ok('combined contribution cannot exceed basic pay', over.tspAmt <= over.base + 0.01);
   ok('the split is preserved when scaled', Math.abs(over.tspTrad - over.tspRoth) < 0.01);
   baseline();   // leave no state for the next group
+})();
+
+G('Extra federal withholding (W-4 Step 4c)');
+(() => {
+  // Reported by a tester with $300/mo of extra withholding: the estimate read
+  // high by about that much and there was no field to put it in. It hides
+  // inside the single FEDERAL TAXES line on the LES.
+  baseline();
+  const none = calcScenario(1800, 'TX', false);
+  baseline(); set('addlFed','300');
+  const extra = calcScenario(1800, 'TX', false);
+  eq('extra withholding lands on federal tax', extra.fedTax - none.fedTax, 300, 0.01);
+  eq('and comes straight off take-home', none.takeHome - extra.takeHome, 300, 0.01);
+  // It is withholding, not liability: gross and FICA must not move.
+  eq('gross is unchanged', extra.gross, none.gross, 0.01);
+  eq('Social Security is unchanged', extra.ss, none.ss, 0.01);
+  eq('Medicare is unchanged', extra.medi, none.medi, 0.01);
+  eq('state tax is unchanged', extra.stateTax, none.stateTax, 0.01);
+  // Must not reduce taxable income — that would be modelling it as a deduction.
+  baseline(); set('addlFed','300'); set('filing','mfj');
+  const mfj = calcScenario(1800, 'TX', false);
+  baseline(); set('filing','mfj');
+  const mfjNone = calcScenario(1800, 'TX', false);
+  eq('the bracket calculation is untouched by it', mfj.fedTax - mfjNone.fedTax, 300, 0.01);
+  // Junk and negatives are clamped like every other money field.
+  baseline(); set('addlFed','-500');
+  eq('negative extra withholding clamps to 0', calcScenario(1800,'TX',false).fedTax, none.fedTax, 0.01);
+  baseline(); set('addlFed','abc');
+  eq('junk extra withholding clamps to 0', calcScenario(1800,'TX',false).fedTax, none.fedTax, 0.01);
+  baseline();
 })();
 
 G('State tax engine (all 51 jurisdictions)');

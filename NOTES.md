@@ -248,6 +248,26 @@ The general rule this earned: a constant that can be derived should be derived,
 and a constant that cannot should be checked against something outside this
 repository. Asserting a literal against itself buys nothing.
 
+## Tester feedback triage (October 7, 2026)
+
+Six real responses on the form. What each one turned out to be:
+
+| Reporter | Report | Verdict |
+| --- | --- | --- |
+| O-3, Knoxville | federal/Medicare "way off", $77 unexplained | **Not a bug.** YTD compared against monthly; the $77 was a pre-tax debt line. Fixed the hint. |
+| O-5, Camp Lejeune | "BAH is incorrect, current BAH 2355" | **Table is almost certainly right.** 2355 is *exactly* our Camp Lejeune **O-4 with-dependants** rate (O-5 is 2553, O-5 without dependants 2016). The number did not come from nowhere — it is a real cell in our own table, one grade down. Needs a question back to her, not a data change. |
+| O-4, Berkeley | scenario B kept her current CONUS COLA; wants per-station special pays | **Real bug.** See open items. |
+| O-5, NSA Mid-South | BAH ~$20 low; $300/mo extra withholding had no field; total off ~$100 | Extra withholding **fixed** (W-4 4c field added). The $20 BAH gap is unexplained — BAH rate protection on a falling rate is the obvious candidate and worth asking about. |
+| O-4, Memphis | accurate | — |
+| E-4, Norfolk/Portsmouth | gross monthly wrong by $39 | **Unresolved.** Gross is basic + BAH + BAS, and $39 matches no obvious boundary: the Norfolk E-4 with/without-dependants gap is $522, and the E-4 4-to-6-year step is $156. Needs his three figures. |
+
+Two patterns worth carrying forward. First, **every "your data is wrong" report
+so far has turned out to be a question about which row applies, not a wrong
+row** — so check whether the reported figure appears somewhere in our own table
+before touching data. Second, small unexplained deltas have twice been something
+real but invisible on the LES (a debt line, extra withholding), so chase them
+rather than writing them off as estimator noise.
+
 ## Open items at handover (September 21, 2026)
 
 Written before a period of leave, so whoever picks this up is not starting from

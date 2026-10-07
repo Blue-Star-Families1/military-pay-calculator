@@ -206,6 +206,11 @@
         </select>
       </div>
       <div>
+        <label for="addlFed">Extra federal withholding ($/mo)</label>
+        <input type="number" id="addlFed" value="0" min="0" step="1">
+        <div class="hint">Only if you asked for extra to be withheld (W-4 Step 4c). It is folded into the <strong>FEDERAL TAXES</strong> line on your LES, so it is easy to miss — leave this at 0 unless you know you elected it.</div>
+      </div>
+      <div>
         <label for="deps">Dependents (affects BAH)</label>
         <select id="deps">
           <option value="yes">Has dependents</option>
@@ -1001,8 +1006,17 @@ function calcScenario(bah, stateCode, stateExempt){
   }
   const memberAnnual = memberTaxMonthly*12;
 
-  // federal tax on the member's own taxable pay (2026 brackets + standard deduction)
-  const fedTax = fedTaxOnAnnual(memberAnnual, filing)/12;
+  /* Federal tax on the member's own taxable pay (2026 brackets + standard
+     deduction), plus any extra the member elected on their W-4 Step 4(c).
+
+     The extra is withholding, not liability, so it is added after the bracket
+     calculation rather than folded into taxable income. A tester with $300/mo
+     of extra withholding reported the estimate reading high by roughly that
+     amount with no field to explain it — the figure is buried inside the single
+     FEDERAL TAXES line on the LES, so it is invisible unless you know it is
+     there. It does not affect FICA, which is on gross wages regardless. */
+  const addlFed = num("addlFed",0);
+  const fedTax = fedTaxOnAnnual(memberAnnual, filing)/12 + addlFed;
 
   // FICA — applies even in a combat zone; incl. Additional Medicare Tax
   const ficaWageMonthly = base + spTaxable;
