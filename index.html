@@ -634,7 +634,14 @@ const STATES = {
     single:[[0,.04],[10000,.06],[40000,.065],[60000,.085],[250000,.0925],[500000,.0975],[1000000,.1075]],
     mfj:[[0,.04],[10000,.06],[40000,.065],[60000,.085],[250000,.0925],[500000,.0975],[1000000,.1075]]}},
   "FL":{name:"Florida",none:true},
-  "GA":{name:"Georgia",flat:.0519,sd:[12000,24000]},
+  /* GA 2026: HB 463, signed May 2026, cut the flat rate to 4.99% and raised the
+     standard deduction to 15,000 / 30,000. We held 5.19% and 12,000 / 24,000 —
+     the 2025 figures — which over-taxed every Georgia resident by roughly $19 a
+     month. Source: Georgia DOR, "Important Tax Updates", 2026 Income Tax
+     Changes. Georgia carries a large military population (Fort Moore, Fort
+     Stewart, Hunter AAF, Robins AFB, Kings Bay, Moody AFB, Dobbins), so this
+     was not a rounding error for a handful of people. */
+  "GA":{name:"Georgia",flat:.0499,sd:[15000,30000]},
   "HI":{name:"Hawaii",sd:[4400,8800],b:{
     single:[[0,.014],[9600,.032],[14400,.055],[19200,.064],[24000,.068],[36000,.072],[48000,.076],[125000,.079],[175000,.0825],[225000,.09],[275000,.10],[325000,.11]],
     mfj:[[0,.014],[19200,.032],[28800,.055],[38400,.064],[48000,.068],[72000,.072],[96000,.076],[250000,.079],[350000,.0825],[450000,.09],[550000,.10],[650000,.11]]}},

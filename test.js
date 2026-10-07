@@ -500,8 +500,17 @@ G('State tax: hand-computed golden values');
      JSON.stringify(STATES.VA.b.single) === JSON.stringify(STATES.VA.b.mfj));
   eq('NC single $60,000 (flat 3.99%, SD 12,750)',
      A.stateTaxAnnual('NC',60000,'single',0), (60000-12750)*0.0399, 0.01);
-  eq('GA single $60,000 (flat 5.19%, SD 12,000)',
-     A.stateTaxAnnual('GA',60000,'single',0), (60000-12000)*0.0519, 0.01);
+  /* GA: literals, not references. Writing this as (60000-SD)*rate reading from
+     STATES would have passed with the stale 5.19% / 12,000 it previously held —
+     which is exactly what happened until the Georgia DOR page was read in
+     October 2026. Source: GA DOR "Important Tax Updates", HB 463. */
+  eq('GA single $60,000 (flat 4.99%, SD 15,000 — GA DOR, HB 463)',
+     A.stateTaxAnnual('GA',60000,'single',0), (60000-15000)*0.0499, 0.01);
+  eq('GA married $90,000 (SD 30,000)',
+     A.stateTaxAnnual('GA',90000,'mfj',0), (90000-30000)*0.0499, 0.01);
+  ok('GA is not still on the 2025 rate', A.STATES.GA.flat === 0.0499);
+  ok('GA is not still on the 2025 standard deduction',
+     A.STATES.GA.sd[0] === 15000 && A.STATES.GA.sd[1] === 30000);
   // Maryland must exceed a same-rate state because it adds average local tax.
   ok('MD exceeds a comparable state (local tax applied)',
      A.stateTaxAnnual('MD',60000,'single',0) > A.stateTaxAnnual('NC',60000,'single',0));

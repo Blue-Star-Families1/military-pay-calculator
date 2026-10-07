@@ -291,6 +291,39 @@ pushing**, or read the push output. GitHub Pages also reports the commit it
 built — `gh api repos/<owner>/<repo>/pages/builds/latest --jq .commit` — which
 is the fastest way to tell "not deployed yet" from "never pushed".
 
+## The state tax table is the largest unverified surface (October 2026)
+
+51 jurisdictions, and until now **not one had been checked against a state
+revenue department.** The "hand-computed golden values" in the suite recompute
+from the app's own constants, so they prove arithmetic and nothing about whether
+the rate is this year's. Identical trap to `PAY_CAP`.
+
+Two states checked so far. **One was wrong:**
+
+| State | Was | Now | Source |
+| --- | --- | --- | --- |
+| GA | 5.19%, SD 12,000 / 24,000 | **4.99%, SD 15,000 / 30,000** | GA DOR "Important Tax Updates"; HB 463, signed May 2026 |
+| VA | SD 8,750 / 17,500 | unchanged — correct | Virginia Tax, TY2026 |
+
+Georgia over-taxed every Georgia resident by roughly **$19/month**, and Georgia
+carries a large military population. The GA golden test had been written as
+`(60000-12000)*0.0519` — the same stale numbers the app held — so it passed
+throughout. It is now written with literals from the DOR page, plus two explicit
+"not still on the 2025 figure" assertions.
+
+**Only 20 of the 51 jurisdictions actually tax military pay**, so that is the
+set worth the effort:
+
+> AL CO DE DC GA HI KS LA MD MA MS NE NJ NC RI SC UT VA WV WI
+
+Nine have no income tax (AK FL NV NH SD TN TX WA WY), 13 exempt military pay by
+default (AZ AR IL IN IA KY MI MN MO MT NM ND OK), and 9 are conditional
+(CA CT ID ME NY OH OR PA VT) — errors there are mostly invisible.
+
+**18 of the 20 remain unchecked.** A one-in-two hit rate on the first sample is
+not evidence the rest are fine. Several states legislated rate cuts effective
+January 2026, which is precisely the failure mode Georgia showed.
+
 ## Open items at handover (September 21, 2026)
 
 Written before a period of leave, so whoever picks this up is not starting from
