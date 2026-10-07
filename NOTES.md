@@ -233,12 +233,26 @@ anchor, and the field label promises "common 2026 maximums". Two were wrong:
 Both wrong values appear in the *other* pay's published table, so this looks
 like cross-contamination between two DFAS pages rather than two separate slips.
 
-Confirmed correct and now cited in the test: HDIP 150, jump 150, HALO 225.
+**Second pass (October 2026) closed out the remaining six.** One more was wrong:
 
-**Still unverified — do not treat as checked:** ACIP 1000, diving 340, hardship
-duty 150, SDAP 450, FSA 250, HFP/IDP 225. The test asserts only the five rows
-that were actually read out of the FMR, deliberately, so the block never implies
-more verification than was done.
+| Row | Was | Now | Source |
+| --- | --- | --- | --- |
+| SDAP | 450 | **750** | FMR 7A Ch 8 para 2.4.2. 450 was the pre-2017 ceiling — $300 stale. |
+
+Confirmed correct: ACIP 1000 (Ch 22 Tables 22-6/22-8/22-9), diving 340, hardship
+150 (Ch 17), FSA 250 (Ch 27), HFP/IDP 225 (Ch 10), HDIP 150, jump 150, HALO 225.
+
+Two traps for a future editor, both now spelled out in the code:
+
+- **Diving 340 is the Master Diver rate.** Plain diving HDIP is capped at $240
+  (Ch 11 para 2.5.1); 340 comes from Tables 11-2/11-4. Someone reading only the
+  cap paragraph will "fix" it to 240 and be wrong.
+- **Hardship 150 is HDP-L/HDP-M.** HDP-Tempo goes to $500 and HDP-ROM to
+  $1,500/month, so 150 is not the arithmetic maximum, it is the common case.
+
+**Final tally: three of eleven defaults were wrong** — 27%. The test now fails
+if any special pay carries a non-zero default without a citation, which is the
+condition that let all three in.
 
 Note CSP-Premium ($200-350, FMR 7A Ch 18 para 4.2) is a separate entitlement and
 is **not** folded into the sea pay default. A member drawing it should add it

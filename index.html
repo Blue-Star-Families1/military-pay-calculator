@@ -544,23 +544,35 @@ function bahLookup(mha){
    label promises "common 2026 maximums", so a default that is neither common
    nor a maximum is a lie the user has no way to catch.
 
-   Verified against DoD FMR 7000.14-R Volume 7A (current editions, Sept 2026):
-     seapay  750  Ch 18 para 4.1 — statutory ceiling; also the top cell of the
-                  Navy/Marine table (E-7..E-9 and W-4/W-5 at high sea duty).
-                  CSP-Premium is a separate $200-350 and is NOT included here.
-     hdip    150  Ch 24 paras 4.3, 5.2, 6.2, 7.3, 8.3, 9.3, 10.3, 11.3
-     jump    150  Ch 24 para 3.3.1 (static line)
-     halo    225  Ch 24 para 3.3.2 (military freefall)
-     sub     950  Ch 23 Table 23-1 — top cell, O-5/O-6 over 18. Statutory
-                  ceiling is $1,000 (Ch 23 para 2.3). Enlisted top out at $600.
+   ALL rows are now verified against DoD FMR 7000.14-R Volume 7A:
+     seapay   750  Ch 18 para 4.1 — statutory ceiling; also the top cell of the
+                   Navy/Marine table. CSP-Premium is a separate $200-350 and is
+                   deliberately NOT folded in here.
+     flight  1000  Ch 22 Tables 22-6, 22-8, 22-9 — AvIP tops out at $1,000
+                   (Army over 10 YAS, Air Force over 12 YAS).
+     hfp      225  Ch 10 paras 2.1.1 and 2.1.2 — HFP flat, IDP prorated daily
+                   to the same monthly ceiling.
+     hdip     150  Ch 24 paras 4.3, 5.2, 6.2, 7.3, 8.3, 9.3, 10.3, 11.3
+     jump     150  Ch 24 para 3.3.1 (static line)
+     halo     225  Ch 24 para 3.3.2 (military freefall)
+     dive     340  Ch 11 Tables 11-2 and 11-4 — Master Diver, enlisted. NOTE:
+                   plain diving HDIP is capped at $240 (Ch 11 para 2.5.1); the
+                   $340 top rate is Master Diver. Do not "correct" it to 240.
+     sub      950  Ch 23 Table 23-1 — top cell, O-5/O-6 over 18. Statutory
+                   ceiling $1,000 (Ch 23 para 2.3). Enlisted top out at $600.
+     hardship 150  Ch 17 para 2.2.3 and Table 17-1 — HDP-L and HDP-M. HDP-Tempo
+                   reaches $500 and HDP-ROM $1,500/mo, but neither is the
+                   common case this default is for.
+     sdap     750  Ch 8 para 2.4.2
+     fsa      250  Ch 27 para 2.3.2 (flat since Oct 1, 2002)
 
-   NOT yet checked against a primary source — do this before trusting them:
-     flight 1000, dive 340, hardship 150, sdap 450, fsa 250, hfp 225.
-
-   Two of these were wrong when audited. seapay was 805, which exceeds the
-   statutory ceiling outright, and sub was 175, which is a near-bottom cell of
-   the enlisted table. 805 and 175 both appear in the *other* pay's table, so
-   they look like a straight cross-contamination between two DFAS pages. */
+   Three of the eleven were wrong when audited:
+     seapay was 805 — above the statutory ceiling outright.
+     sub was 175 — a near-bottom cell of the enlisted table.
+     sdap was 450 — the pre-2017 ceiling, $300 stale.
+   805 and 175 each appear in the *other* pay's published table, so those two
+   look like cross-contamination between two DFAS pages rather than two
+   independent slips. */
 const SPECIALS = [
   ["seapay","Career sea pay",750,true],
   ["flight","Aviation / flight pay (ACIP)",1000,true],
@@ -571,7 +583,7 @@ const SPECIALS = [
   ["dive","Diving duty pay",340,true],
   ["sub","Submarine duty pay",950,true],
   ["hardship","Hardship duty pay",150,true],
-  ["sdap","Special duty assignment pay (SDAP)",450,true],
+  ["sdap","Special duty assignment pay (SDAP)",750,true],
   ["fsa","Family separation allowance (FSA)",250,false],
   // COLA is paid on top of BAH in high-cost areas. The two kinds are taxed
   // differently, so they are separate rows rather than one amount.

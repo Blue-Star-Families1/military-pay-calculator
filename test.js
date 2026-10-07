@@ -603,19 +603,32 @@ G('Special and incentive pays');
   });
   ok('all ' + SPECIALS.length + ' special pays behave correctly', bad === 0);
 })();
-/* Defaults that have been checked against DoD FMR Vol 7A. Only these are
-   asserted; the rest are deliberately absent so this block never implies more
-   verification than was actually done. Two were wrong when first audited:
-   career sea pay was 805, above the statutory ceiling, and submarine duty pay
-   was 175, a near-bottom cell. Both values appear in the other pay's table. */
+/* Every default is now checked against DoD FMR Vol 7A and asserted here with
+   its citation. Three of the eleven were wrong when audited: career sea pay was
+   805 (above the statutory ceiling), submarine duty was 175 (a near-bottom
+   cell), and SDAP was 450 (the pre-2017 ceiling). The first two each appear in
+   the other pay's published table, which looks like cross-contamination. */
 (() => {
   const CITED = {
-    seapay: [750, 'FMR 7A Ch 18 para 4.1 — statutory ceiling and Navy table max'],
-    hdip:   [150, 'FMR 7A Ch 24 paras 4.3, 5.2, 6.2, 7.3'],
-    jump:   [150, 'FMR 7A Ch 24 para 3.3.1 static line'],
-    halo:   [225, 'FMR 7A Ch 24 para 3.3.2 military freefall'],
-    sub:    [950, 'FMR 7A Ch 23 Table 23-1 — O-5/O-6 over 18, top cell']
+    seapay:   [750,  'FMR 7A Ch 18 para 4.1 — statutory ceiling and Navy table max'],
+    flight:   [1000, 'FMR 7A Ch 22 Tables 22-6/22-8/22-9 — AvIP ceiling'],
+    hfp:      [225,  'FMR 7A Ch 10 paras 2.1.1 and 2.1.2'],
+    hdip:     [150,  'FMR 7A Ch 24 paras 4.3, 5.2, 6.2, 7.3'],
+    jump:     [150,  'FMR 7A Ch 24 para 3.3.1 static line'],
+    halo:     [225,  'FMR 7A Ch 24 para 3.3.2 military freefall'],
+    dive:     [340,  'FMR 7A Ch 11 Tables 11-2/11-4 Master Diver — NOT the $240 plain HDIP cap'],
+    sub:      [950,  'FMR 7A Ch 23 Table 23-1 — O-5/O-6 over 18, top cell'],
+    hardship: [150,  'FMR 7A Ch 17 para 2.2.3 and Table 17-1 — HDP-L / HDP-M'],
+    sdap:     [750,  'FMR 7A Ch 8 para 2.4.2'],
+    fsa:      [250,  'FMR 7A Ch 27 para 2.3.2']
   };
+  // Every non-COLA, non-custom row must be cited. This is what stops a new pay
+  // being added with an uncited default, which is how the first three got in.
+  const uncited = SPECIALS
+    .filter(s => s[2] > 0 && !CITED[s[0]])
+    .map(s => s[0]);
+  ok('no special pay carries an uncited non-zero default (' + (uncited.join(',') || 'none') + ')',
+     uncited.length === 0);
   Object.keys(CITED).forEach(key => {
     const row = SPECIALS.find(s => s[0] === key);
     ok('special pay "' + key + '" exists', !!row);
