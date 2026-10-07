@@ -256,7 +256,7 @@ Six real responses on the form. What each one turned out to be:
 | --- | --- | --- |
 | O-3, Knoxville | federal/Medicare "way off", $77 unexplained | **Not a bug.** YTD compared against monthly; the $77 was a pre-tax debt line. Fixed the hint. |
 | O-5, Camp Lejeune | "BAH is incorrect, current BAH 2355" | **Table is almost certainly right.** 2355 is *exactly* our Camp Lejeune **O-4 with-dependants** rate (O-5 is 2553, O-5 without dependants 2016). The number did not come from nowhere — it is a real cell in our own table, one grade down. Needs a question back to her, not a data change. |
-| O-4, Berkeley | scenario B kept her current CONUS COLA; wants per-station special pays | **Real bug.** See open items. |
+| O-4, Berkeley | scenario B kept her current CONUS COLA; wants per-station special pays | **Real bug, fixed.** COLA now has a per-scenario amount. Every other special pay still follows the member, which is correct — only COLA is paid *for where you are*. |
 | O-5, NSA Mid-South | BAH ~$20 low; $300/mo extra withholding had no field; total off ~$100 | Extra withholding **fixed** (W-4 4c field added). The $20 BAH gap is unexplained — BAH rate protection on a falling rate is the obvious candidate and worth asking about. |
 | O-4, Memphis | accurate | — |
 | E-4, Norfolk/Portsmouth | gross monthly wrong by $39 | **Unresolved.** Gross is basic + BAH + BAS, and $39 matches no obvious boundary: the Norfolk E-4 with/without-dependants gap is $522, and the E-4 4-to-6-year step is $156. Needs his three figures. |
@@ -267,6 +267,15 @@ row** — so check whether the reported figure appears somewhere in our own tabl
 before touching data. Second, small unexplained deltas have twice been something
 real but invisible on the LES (a debt line, extra withholding), so chase them
 rather than writing them off as estimator noise.
+
+### Deploying: verify the push, do not silence it
+
+A push to `bsf` failed silently because the command piped its output to `$null`,
+and two commits later the live site was still missing a change that `git log`
+said had shipped. **Always check `git rev-parse` against both remotes after
+pushing**, or read the push output. GitHub Pages also reports the commit it
+built — `gh api repos/<owner>/<repo>/pages/builds/latest --jq .commit` — which
+is the fastest way to tell "not deployed yet" from "never pushed".
 
 ## Open items at handover (September 21, 2026)
 
