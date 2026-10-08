@@ -547,6 +547,28 @@ G('State tax: hand-computed golden values');
   // note must not claim otherwise — that wording was wrong for a year.
   ok('MD note does not call the local rate an average',
      !/avg\./i.test(A.stateNote('MD')) && /highest rate/i.test(A.stateNote('MD')));
+
+  // CO verified Oct 2026: flat 4.40%, and because Colorado starts from federal
+  // taxable income its deduction must track STD_DED rather than drift from it.
+  ok('CO is on the verified 4.40% flat rate', A.STATES.CO.flat === 0.044);
+  ok('CO deduction tracks the federal standard deduction',
+     A.STATES.CO.sd[0] === STD_DED.single && A.STATES.CO.sd[1] === STD_DED.mfj);
+
+  // LA verified Oct 2026: graduated brackets repealed, flat 3%.
+  ok('LA is flat 3% with no surviving brackets',
+     A.STATES.LA.flat === 0.03 && !A.STATES.LA.b);
+
+  // AL brackets verified against ALDOR; the deduction is knowingly unresolved
+  // (AGI-based chart), so this pins only what was actually confirmed.
+  (() => {
+    const s = A.STATES.AL.b.single, j = A.STATES.AL.b.mfj;
+    ok('AL single brackets are 2% / 4% over 500 / 5% over 3,000 (ALDOR)',
+       s[0][1] === 0.02 && s[1][0] === 500 && s[1][1] === 0.04 &&
+       s[2][0] === 3000 && s[2][1] === 0.05);
+    ok('AL joint brackets are 2% / 4% over 1,000 / 5% over 6,000 (ALDOR)',
+       j[1][0] === 1000 && j[2][0] === 6000 && j[2][1] === 0.05);
+    ok('AL still deducts federal income tax paid', A.STATES.AL.fedDeduct === true);
+  })();
   // Maryland must exceed a same-rate state because it adds average local tax.
   ok('MD exceeds a comparable state (local tax applied)',
      A.stateTaxAnnual('MD',60000,'single',0) > A.stateTaxAnnual('NC',60000,'single',0));

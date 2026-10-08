@@ -347,8 +347,27 @@ Nine have no income tax (AK FL NV NH SD TN TX WA WY), 13 exempt military pay by
 default (AZ AR IL IN IA KY MI MN MO MT NM ND OK), and 9 are conditional
 (CA CT ID ME NY OH OR PA VT) — errors there are mostly invisible.
 
-**14 of the 20 remain unchecked**: AL CO DE DC KS LA MA MS NE NC RI UT WI.
-Four of the first six were wrong. That is not a sample that licenses assuming
+### Round two: CO, LA, AL (October 2026)
+
+| State | Verdict |
+| --- | --- |
+| CO | **Correct.** Flat 4.40% confirmed; the 2024 bill to cut it to 4.0% was postponed indefinitely and never took effect. Colorado starts from *federal* taxable income, so its deduction is correct by construction — a test now asserts it tracks `STD_DED` rather than drifting. |
+| LA | **Rate correct**, flat 3% (graduated brackets repealed from 1 Jan 2025). **Deduction knowingly imperfect**: 12,500 / 25,000 is the statutory base, and from 2026 Louisiana indexes it to CPI-U. The indexed figure is not published anywhere reachable, so we hold the base. Under-deducts slightly; over-states tax by a few dollars a month. Bounded and documented, not guessed. |
+| AL | **Brackets correct** (2 / 4 / 5% at 500 and 3,000 single; 1,000 and 6,000 joint) — now asserted. **Deduction deliberately left alone.** |
+
+**Why Alabama was not changed.** Alabama has no single standard deduction; it
+has an AGI-based Standard Deduction Chart that phases down. Published maximums
+are 4,500 / 11,500, with a lower floor. Our 3,000 / 8,500 sits between the two,
+so it is either a considered mid-chart value or stale — and the chart itself is
+not on any ALDOR page I could reach. At military income levels the chart is
+probably at or near its floor, which would mean our figure is too *high*, not
+too low. Changing it on a guess would be worse than leaving it. **Needs the
+chart from the Form 40 booklet.** This is the one entry where the right move was
+to stop.
+
+**11 of the 20 remain unchecked**: DE DC KS MA MS NE NC RI UT WI (and AL's
+deduction). Four of the nine examined so far were wrong outright, one more was
+mislabelled, and one is unresolved. That is not a sample that licenses assuming
 the rest are fine.
 
 Partially corroborated, but only against the Tax Foundation's 2026 change list

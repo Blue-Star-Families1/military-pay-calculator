@@ -616,6 +616,17 @@ const BRACKETS = {
 const SS_RATE=.062, SS_WAGE_BASE=184500, MEDI_RATE=.0145;
 
 const STATES = {
+  /* AL — DELIBERATELY NOT CHANGED, October 2026. Brackets verified correct
+     against ALDOR (2% first 500 / 4% next 2,500 / 5% over 3,000 single;
+     2% / 4% / 5% at 1,000 / 6,000 joint). The standard deduction is the open
+     question: Alabama does not have a single figure, it has an AGI-based
+     Standard Deduction Chart that phases down. The published maximums are
+     4,500 single / 11,500 joint, and there is a lower floor. Our 3,000 / 8,500
+     sits between the two, so it may be a considered mid-chart choice or it may
+     be stale, and the chart itself is not published in any page I could reach.
+     At military income levels the chart is likely at or near its floor.
+     Changing this on a guess would be worse than leaving it. Needs the chart
+     from the Form 40 booklet. */
   "AL":{name:"Alabama",fedDeduct:true,sd:[3000,8500],b:{single:[[0,.02],[500,.04],[3000,.05]],mfj:[[0,.02],[1000,.04],[6000,.05]]}},
   "AK":{name:"Alaska",none:true},
   "AZ":{name:"Arizona",exemptDefault:true,flat:.025,sd:[16100,32200]},
@@ -623,6 +634,11 @@ const STATES = {
   "CA":{name:"California",cond:true,sd:[5540,11080],b:{
     single:[[0,.01],[11079,.02],[26264,.04],[41452,.06],[57542,.08],[72724,.093],[371479,.103],[445771,.113],[742953,.123],[1000000,.133]],
     mfj:[[0,.01],[22158,.02],[52528,.04],[82904,.06],[115084,.08],[145448,.093],[742958,.103],[891542,.113],[1000000,.123],[1485906,.133]]}},
+  /* CO verified Oct 2026: flat 4.40% (Legislative Council Staff; the 2024 bill
+     to cut it to 4.0% was postponed indefinitely and never took effect).
+     Colorado starts from *federal* taxable income, so the federal standard
+     deduction flows through — 16,100 / 32,200 is correct by construction and
+     must be kept in step with STD_DED above, not maintained separately. */
   "CO":{name:"Colorado",flat:.044,sd:[16100,32200]},
   "CT":{name:"Connecticut",cond:true,sd:[0,0],b:{
     single:[[0,.02],[10000,.045],[50000,.055],[100000,.06],[200000,.065],[250000,.069],[500000,.0699]],
@@ -663,6 +679,12 @@ const STATES = {
   "IA":{name:"Iowa",exemptDefault:true,flat:.039,sd:[16100,32200]},
   "KS":{name:"Kansas",sd:[3605,8240],b:{single:[[0,.052],[23000,.0558]],mfj:[[0,.052],[46000,.0558]]}},
   "KY":{name:"Kentucky",exemptDefault:true,flat:.035,sd:[3270,6540]},
+  /* LA: flat 3% verified Oct 2026 (LDR — graduated brackets repealed for
+     periods beginning on or after 1 Jan 2025). The deduction is 12,500 / 25,000
+     by statute for 2025, and from 2026 it is indexed to CPI-U. The indexed 2026
+     figure is not published anywhere I could reach, so this holds the
+     un-indexed base — which under-deducts slightly and therefore over-states
+     tax by a few dollars a month. Known and bounded, not guessed at. */
   "LA":{name:"Louisiana",flat:.03,sd:[12500,25000]},
   "ME":{name:"Maine",cond:true,sd:[8350,16700],b:{
     single:[[0,.058],[27399,.0675],[64849,.0715]],
