@@ -642,7 +642,19 @@ const STATES = {
      Stewart, Hunter AAF, Robins AFB, Kings Bay, Moody AFB, Dobbins), so this
      was not a rounding error for a handful of people. */
   "GA":{name:"Georgia",flat:.0499,sd:[15000,30000]},
-  "HI":{name:"Hawaii",sd:[4400,8800],b:{
+  /* HI 2026: Act 46 (SLH 2024) steps the standard deduction up every two years.
+     We held 4,400 / 8,800, which the Hawaii DOTAX FAQ lists verbatim as the
+     *2025* amounts; 2026 is 8,000 / 16,000 — close to double. That under-
+     deduction cost a Hawaii E-5 roughly $23 a month, and Hawaii carries Pearl
+     Harbor-Hickam, Schofield, Kaneohe Bay and Wheeler.
+     Source: tax.hawaii.gov/faq, "What is the standard deduction amount for
+     Hawaii?", page updated 27 Aug 2026.
+     HoH is $12,000 in 2026 but stateTaxAnnual collapses HoH into single, so a
+     Hawaii head of household still gets 8,000. Recorded in NOTES.
+     The bracket thresholds below are NOT confirmed for 2026 — Act 46 also
+     widens brackets on a staggered schedule and DOTAX does not publish the
+     table in prose. Treat them as unverified. */
+  "HI":{name:"Hawaii",sd:[8000,16000],b:{
     single:[[0,.014],[9600,.032],[14400,.055],[19200,.064],[24000,.068],[36000,.072],[48000,.076],[125000,.079],[175000,.0825],[225000,.09],[275000,.10],[325000,.11]],
     mfj:[[0,.014],[19200,.032],[28800,.055],[38400,.064],[48000,.068],[72000,.072],[96000,.076],[250000,.079],[350000,.0825],[450000,.09],[550000,.10],[650000,.11]]}},
   "ID":{name:"Idaho",cond:true,flat:.053,sd:[16100,32200]},
@@ -985,7 +997,12 @@ function stateNote(code){
   if(s.none) return "No state income tax.";
   if(s.exemptDefault) return "Fully exempts active-duty military pay (box pre-checked).";
   if(s.cond) return "Taxed if stationed in "+s.name+"; exempt if stationed elsewhere — check the box if you're stationed outside "+s.name+".";
-  return "Taxes active-duty military pay (2026 brackets applied)"+(s.local?", incl. avg. local tax.":". Check the box only if you qualify for an exemption.");
+  /* Maryland is the only state here with a local add-on, and we apply 3.20% —
+     which is the *highest* county rate, not the average. Calling it "avg." was
+     wrong: 2026 county rates run from 2.25% up to 3.20%, so this is a
+     deliberately conservative figure, and the label now says so. A member in a
+     lower-rate county will take home slightly more than the estimate. */
+  return "Taxes active-duty military pay (2026 brackets applied)"+(s.local?", plus local county tax at the highest rate (3.20%) — your county may be lower.":". Check the box only if you qualify for an exemption.");
 }
 function syncStateNote(sid,eid,nid){
   const code=$(sid).value;

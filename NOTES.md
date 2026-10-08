@@ -298,14 +298,30 @@ revenue department.** The "hand-computed golden values" in the suite recompute
 from the app's own constants, so they prove arithmetic and nothing about whether
 the rate is this year's. Identical trap to `PAY_CAP`.
 
-Four states checked so far. **Three were wrong:**
+Six states checked so far. **Four were wrong:**
 
 | State | Was | Now | Source |
 | --- | --- | --- | --- |
 | GA | 5.19%, SD 12,000 / 24,000 | **4.99%, SD 15,000 / 30,000** | GA DOR "Important Tax Updates"; HB 463, signed May 2026 |
 | SC | 0 / 3% / 6%, SD 8,350 / 16,700 | **1.99% / 5.21% over 30,000, deduction 15,000 / 30,000** | SCDOR; Act 110, signed 30 Mar 2026 |
 | WV | 2.22 / 2.96 / 3.33 / 4.44 / 4.82 | **2.11 / 2.81 / 3.16 / 4.22 / 4.58** | WV Tax Division; SB 392, Code 11-21-4j, retroactive to 1 Jan 2026 |
+| HI | SD 4,400 / 8,800 | **8,000 / 16,000** | HI DOTAX FAQ (updated 27 Aug 2026); Act 46, SLH 2024 |
 | VA | SD 8,750 / 17,500 | unchanged — correct | Virginia Tax, TY2026 |
+| MD | brackets + SD 3,350 / 6,700 | unchanged — correct | MD fiscal note HB 1238; BRFA 2025 top rates already present |
+
+Hawaii is the clearest example of the failure mode: DOTAX lists 4,400 / 8,800
+**verbatim as the 2025 amounts** on the same page that gives 2026 as
+8,000 / 16,000. Act 46 steps the deduction every two years, so a year-stale copy
+is not off by an inflation nudge — it is off by nearly half. Roughly $23/month
+for a Hawaii E-5, against Pearl Harbor-Hickam, Schofield, Kaneohe Bay, Wheeler.
+
+Hawaii's **brackets** are still unverified: Act 46 widens those on a staggered
+schedule too, and DOTAX does not publish the table in prose.
+
+Maryland was checked and is correct — but its local add-on was mislabelled. We
+apply 3.20%, which is the *highest* county rate (2026 rates run 2.25%–3.20%),
+while the note called it an average. The note now says "highest rate", so the
+estimate is understood as conservative rather than typical.
 
 South Carolina was not a rate tweak but a restructure: three brackets became
 two, and the federal-linked standard deduction became the SC Income Adjusted
@@ -331,9 +347,15 @@ Nine have no income tax (AK FL NV NH SD TN TX WA WY), 13 exempt military pay by
 default (AZ AR IL IN IA KY MI MN MO MT NM ND OK), and 9 are conditional
 (CA CT ID ME NY OH OR PA VT) — errors there are mostly invisible.
 
-**16 of the 20 remain unchecked**: AL CO DE DC HI KS LA MD MA MS NE NC RI UT WI
-(plus VA, done). Three of the first four were wrong. That is not a sample that
-licenses assuming the rest are fine.
+**14 of the 20 remain unchecked**: AL CO DE DC KS LA MA MS NE NC RI UT WI.
+Four of the first six were wrong. That is not a sample that licenses assuming
+the rest are fine.
+
+Partially corroborated, but only against the Tax Foundation's 2026 change list
+rather than a revenue department — so treat as *likely* right, not verified:
+NC 3.99%, MS 4% over 10,000, NE top 4.55%. CO and LA did not appear on any 2026
+change list, which suggests their rates are unchanged, but the *values* in our
+table have still never been read off a state source.
 
 Two more known-stale entries, both low impact because the state exempts military
 pay by default, so they are recorded rather than fixed:

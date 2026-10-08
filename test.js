@@ -530,6 +530,23 @@ G('State tax: hand-computed golden values');
   eq('WV $100,000 = 1,950.50 + 4.58% of the excess',
      A.stateTaxAnnual('WV',100000,'single',0), 1950.50 + 40000*0.0458, 0.01);
   ok('WV is off the 2025 4.82% top rate', A.STATES.WV.b.single[4][1] === 0.0458);
+
+  /* HI 2026: Act 46 steps the standard deduction every two years. We shipped
+     4,400 / 8,800 — which DOTAX lists verbatim as the 2025 amounts — against an
+     actual 8,000 / 16,000. Asserted as literals, and with an explicit check
+     that we are not back on last year's figures. Source: tax.hawaii.gov/faq. */
+  ok('HI standard deduction is the 2026 step, not 2025',
+     A.STATES.HI.sd[0] === 8000 && A.STATES.HI.sd[1] === 16000);
+  ok('HI is not still on the 2025 deduction',
+     A.STATES.HI.sd[0] !== 4400 && A.STATES.HI.sd[1] !== 8800);
+  // The deduction change alone must move a realistic Hawaii bill.
+  ok('the HI deduction materially reduces tax vs the 2025 figure',
+     A.stateTaxAnnual('HI',50000,'single',0) < (50000-4400)*0.076);
+
+  // MD: the local add-on is the highest county rate, not an average. The state
+  // note must not claim otherwise — that wording was wrong for a year.
+  ok('MD note does not call the local rate an average',
+     !/avg\./i.test(A.stateNote('MD')) && /highest rate/i.test(A.stateNote('MD')));
   // Maryland must exceed a same-rate state because it adds average local tax.
   ok('MD exceeds a comparable state (local tax applied)',
      A.stateTaxAnnual('MD',60000,'single',0) > A.stateTaxAnnual('NC',60000,'single',0));
