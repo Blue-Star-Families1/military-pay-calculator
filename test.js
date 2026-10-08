@@ -569,6 +569,28 @@ G('State tax: hand-computed golden values');
        j[1][0] === 1000 && j[2][0] === 6000 && j[2][1] === 0.05);
     ok('AL still deducts federal income tax paid', A.STATES.AL.fedDeduct === true);
   })();
+
+  /* KS verified Oct 2026. KDOR writes the joint upper band as "5.58% minus
+     $175". That $175 is a continuity constant, not a deduction — this asserts
+     our marginal form lands on KDOR's figure, so anyone tempted to also
+     subtract 175 will see the test fail. */
+  eq('KS joint at $46,000 matches KDOR both ways (5.58% minus $175)',
+     A.stateTaxAnnual('KS',46000+8240,'mfj',0), 46000*0.0558-175, 1);
+  eq('KS joint at $46,000 equals the lower band exactly',
+     A.stateTaxAnnual('KS',46000+8240,'mfj',0), 46000*0.052, 1);
+  ok('KS deduction is the enacted 2025/26 figure, not the unenacted HB 2629',
+     A.STATES.KS.sd[0] === 3605 && A.STATES.KS.sd[1] === 8240);
+
+  /* MS verified Oct 2026: 0% on the first 10,000, 4% above (MSDOR General
+     Information). Note MSDOR's own FAQ page still shows the 2025 rate of 4.4%. */
+  ok('MS taxes the first $10,000 at zero',
+     A.stateTaxAnnual('MS',10000+8300,'single',0) === 0);
+  eq('MS excess over $10,000 is taxed at 4%',
+     A.stateTaxAnnual('MS',50000+8300,'single',0), (50000-10000)*0.04, 0.01);
+  ok('MS is off the 2025 rate of 4.4%', A.STATES.MS.b.single[1][1] === 0.04);
+  // The sd here is exemption + standard deduction combined; guard the combination.
+  ok('MS sd combines the $6,000/$12,000 exemption with the $2,300/$4,600 deduction',
+     A.STATES.MS.sd[0] === 6000+2300 && A.STATES.MS.sd[1] === 12000+4600);
   // Maryland must exceed a same-rate state because it adds average local tax.
   ok('MD exceeds a comparable state (local tax applied)',
      A.stateTaxAnnual('MD',60000,'single',0) > A.stateTaxAnnual('NC',60000,'single',0));

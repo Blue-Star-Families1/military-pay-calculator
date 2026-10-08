@@ -365,7 +365,30 @@ too low. Changing it on a guess would be worse than leaving it. **Needs the
 chart from the Form 40 booklet.** This is the one entry where the right move was
 to stop.
 
-**11 of the 20 remain unchecked**: DE DC KS MA MS NE NC RI UT WI (and AL's
+### Round three: KS, MS (October 2026)
+
+Both **correct** — but each had a trap that would have produced a wrong "fix":
+
+- **KS.** KDOR states the joint upper band as "5.58% **minus $175**". That $175
+  is a continuity constant, not a deduction: .0558 × 46,000 − 175 = 2,391.80,
+  and .052 × 46,000 = 2,392. Our marginal brackets already reproduce it. Adding
+  a $175 subtraction would double-count. Two tests now assert the figure from
+  both directions so the trap is visible.
+  HB 2629 would raise the deduction to 3,805 / 8,640 for 2026, but there is no
+  evidence it was enacted and the 2026 estimated-tax form still prints the 2025
+  amounts. Left alone; recheck in January.
+- **MS.** Rate confirmed 0% on the first 10,000 then 4% for 2026, dropping to
+  **3.75% in 2027** — diary that. The `sd` of 8,300 / 16,600 looks wrong at a
+  glance but is right: it combines MSDOR's exemption (6,000 / 12,000) with the
+  standard deduction (2,300 / 4,600). A test now pins the combination so nobody
+  "corrects" 8,300 down to 2,300.
+
+**MSDOR contradicts itself**: its Individual Income Tax FAQ page still prints
+the 2025 rate of 4.4% while its General Information page gives 2026 as 4%. When
+two pages of the same revenue department disagree, prefer the one that is
+explicitly year-labelled, and record which you used.
+
+**9 of the 20 remain unchecked**: DE DC MA NE NC RI UT WI (and AL's
 deduction). Four of the nine examined so far were wrong outright, one more was
 mislabelled, and one is unresolved. That is not a sample that licenses assuming
 the rest are fine.
