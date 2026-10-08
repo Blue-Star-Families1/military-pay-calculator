@@ -298,12 +298,23 @@ revenue department.** The "hand-computed golden values" in the suite recompute
 from the app's own constants, so they prove arithmetic and nothing about whether
 the rate is this year's. Identical trap to `PAY_CAP`.
 
-Two states checked so far. **One was wrong:**
+Four states checked so far. **Three were wrong:**
 
 | State | Was | Now | Source |
 | --- | --- | --- | --- |
 | GA | 5.19%, SD 12,000 / 24,000 | **4.99%, SD 15,000 / 30,000** | GA DOR "Important Tax Updates"; HB 463, signed May 2026 |
+| SC | 0 / 3% / 6%, SD 8,350 / 16,700 | **1.99% / 5.21% over 30,000, deduction 15,000 / 30,000** | SCDOR; Act 110, signed 30 Mar 2026 |
+| WV | 2.22 / 2.96 / 3.33 / 4.44 / 4.82 | **2.11 / 2.81 / 3.16 / 4.22 / 4.58** | WV Tax Division; SB 392, Code 11-21-4j, retroactive to 1 Jan 2026 |
 | VA | SD 8,750 / 17,500 | unchanged — correct | Virginia Tax, TY2026 |
+
+South Carolina was not a rate tweak but a restructure: three brackets became
+two, and the federal-linked standard deduction became the SC Income Adjusted
+Deduction. We were running the entire 2025 structure.
+
+West Virginia publishes only three of its five rates in prose. The other two
+were derived and then **checked against the Tax Division's own anchor** — tax at
+$60,000 is $1,950.50, and the five brackets sum to exactly that. The test
+asserts the anchor rather than the rates, so any single wrong rate breaks it.
 
 Georgia over-taxed every Georgia resident by roughly **$19/month**, and Georgia
 carries a large military population. The GA golden test had been written as
@@ -320,9 +331,23 @@ Nine have no income tax (AK FL NV NH SD TN TX WA WY), 13 exempt military pay by
 default (AZ AR IL IN IA KY MI MN MO MT NM ND OK), and 9 are conditional
 (CA CT ID ME NY OH OR PA VT) — errors there are mostly invisible.
 
-**18 of the 20 remain unchecked.** A one-in-two hit rate on the first sample is
-not evidence the rest are fine. Several states legislated rate cuts effective
-January 2026, which is precisely the failure mode Georgia showed.
+**16 of the 20 remain unchecked**: AL CO DE DC HI KS LA MD MA MS NE NC RI UT WI
+(plus VA, done). Three of the first four were wrong. That is not a sample that
+licenses assuming the rest are fine.
+
+Two more known-stale entries, both low impact because the state exempts military
+pay by default, so they are recorded rather than fixed:
+
+- **MT** holds 5.9%; the 2026 top rate is 5.65%.
+- **UT** holds 4.5%; a 2026 cut to 4.45% is reported but I could not confirm it
+  against the Utah State Tax Commission, so it is left alone deliberately.
+
+**Head of household is collapsed into single in every state.** `stateTaxAnnual`
+does `filing==="mfj" ? 1 : 0`. Mostly harmless, since many states have no
+separate HoH schedule — but South Carolina's new deduction is $22,500 for HoH
+against $15,000 for single, so an SC head of household is now over-taxed. Fixing
+it means a third slot in every `sd` and `b` entry, which is a real change to 51
+records; worth doing, but not worth doing carelessly.
 
 ## Open items at handover (September 21, 2026)
 

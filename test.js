@@ -511,6 +511,25 @@ G('State tax: hand-computed golden values');
   ok('GA is not still on the 2025 rate', A.STATES.GA.flat === 0.0499);
   ok('GA is not still on the 2025 standard deduction',
      A.STATES.GA.sd[0] === 15000 && A.STATES.GA.sd[1] === 30000);
+
+  /* SC 2026 (Act 110, signed 30 Mar 2026): two brackets replace three, and the
+     federal-linked standard deduction becomes the SC Income Adjusted Deduction.
+     SCDOR expresses the top band as "5.21% minus $966"; this checks that our
+     bracket form reproduces that exactly rather than approximately. */
+  eq('SC $30,000 taxable — SCDOR 1.99% band tops out at $597',
+     A.stateTaxAnnual('SC',30000+15000,'single',0), 597, 0.01);
+  eq('SC $80,000 taxable matches SCDOR "5.21% minus $966"',
+     A.stateTaxAnnual('SC',80000+15000,'single',0), 80000*0.0521-966, 0.01);
+  ok('SC is off the pre-2026 three-bracket table', A.STATES.SC.b.single.length === 2);
+
+  /* WV 2026 (SB 392, Code 11-21-4j, retroactive to 1 Jan 2026). The Tax
+     Division publishes tax at $60,000 as $1,950.50. That single figure pins all
+     four lower rates at once — if any one is wrong, the total moves. */
+  eq('WV $60,000 = $1,950.50 exactly (WV Tax Division)',
+     A.stateTaxAnnual('WV',60000,'single',0), 1950.50, 0.01);
+  eq('WV $100,000 = 1,950.50 + 4.58% of the excess',
+     A.stateTaxAnnual('WV',100000,'single',0), 1950.50 + 40000*0.0458, 0.01);
+  ok('WV is off the 2025 4.82% top rate', A.STATES.WV.b.single[4][1] === 0.0458);
   // Maryland must exceed a same-rate state because it adds average local tax.
   ok('MD exceeds a comparable state (local tax applied)',
      A.stateTaxAnnual('MD',60000,'single',0) > A.stateTaxAnnual('NC',60000,'single',0));
